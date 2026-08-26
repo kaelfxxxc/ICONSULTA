@@ -52,18 +52,19 @@ export default function Login() {
         await signIn({ email, password })
         navigate(ROLE_HOME[role], { replace: true })
       } else {
-        const { session } = await signUp({
+        await signUp({
           email,
           password,
           name,
           role,
           department: role === 'instructor' ? department : undefined,
         })
-        if (session) navigate(ROLE_HOME[role], { replace: true })
-        else
-          setNotice(
-            'Account created. If email confirmation is enabled, confirm via the emailed link, then sign in.',
-          )
+        // Email confirmation is bypassed: route the new account to the Sign In
+        // tab to log in with the credentials they just created. signUp uses a
+        // session-less client, so the browser is never auto-logged-in here.
+        setMode('signin')
+        setPassword('')
+        setNotice('Account created. Please sign in with your credentials.')
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong.')

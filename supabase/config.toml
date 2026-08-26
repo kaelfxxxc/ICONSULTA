@@ -14,6 +14,19 @@ enabled = true
 schemas = ["public"]
 extra_search_path = ["public"]
 
+# ---- Auth ---------------------------------------------------------------------
+# Email confirmation is intentionally OFF: sign-up creates a usable account
+# immediately and the app routes the new user to the Sign In screen to log in.
+# NOTE: this block only governs the LOCAL stack (`supabase start`). For the
+# hosted project, turn the same toggle off in the dashboard:
+#   Authentication -> Sign In / Providers -> Email -> "Confirm email" = off.
+[auth]
+enable_signup = true
+
+[auth.email]
+enable_signup = true
+enable_confirmations = false
+
 # ---- Edge Functions -----------------------------------------------------------
 # All functions require a valid Supabase JWT (verify_jwt = true, the default);
 # each function additionally checks role/ownership internally.
