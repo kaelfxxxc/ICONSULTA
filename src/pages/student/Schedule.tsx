@@ -83,7 +83,7 @@ export default function StudentSchedule() {
                   </div>
                 </div>
               </div>
-              <SectionCard bodyClassName="divide-y divide-slate-100 p-0">
+              <div className="divide-y divide-slate-100 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                 {items.map((a) => (
                   <div
                     key={a.id}
@@ -113,7 +113,7 @@ export default function StudentSchedule() {
                     )}
                   </div>
                 ))}
-              </SectionCard>
+              </div>
             </div>
           ))}
         </div>
