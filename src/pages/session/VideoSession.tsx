@@ -6,6 +6,7 @@ import {
   useAppointmentSummary,
   useEndSession,
 } from '../../hooks/useAppointmentSummary'
+import { useWebRTC } from '../../hooks/useWebRTC'
 import { AiSummaryPanel } from '../../components/dashboard'
 import { Avatar, Loader } from '../../components/common'
 import { Brand } from '../../components/layout/Sidebar'
@@ -43,11 +44,26 @@ export default function VideoSession() {
   const { data: summary } = useAppointmentSummary(appointmentId)
   const endSession = useEndSession(appointmentId)
 
-  const [micOn, setMicOn] = useState(true)
-  const [camOn, setCamOn] = useState(true)
-  const [sharing, setSharing] = useState(false)
-
   const ended = appt?.status === 'completed'
+
+  // Real camera/mic + peer connection. Signaling rides Supabase Realtime on a
+  // channel keyed by the appointment, so both parties meet in the same room.
+  const {
+    phase,
+    mediaError,
+    micOn,
+    camOn,
+    sharing,
+    remoteMuted,
+    remoteCamOff,
+    setLocalVideoEl,
+    setRemoteVideoEl,
+    toggleMic,
+    toggleCam,
+    toggleShare,
+    stopAll,
+  } = useWebRTC(ended ? undefined : appointmentId, profile?.id)
+
   const elapsed = useElapsed(!ended)
 
   const home = profile ? ROLE_HOME[profile.role] : '/'
@@ -58,6 +74,7 @@ export default function VideoSession() {
     : (appt?.instructor?.user?.name ?? 'Instructor')
 
   async function handleEnd() {
+    stopAll()
     try {
       await endSession.mutateAsync()
     } catch {
@@ -72,6 +89,15 @@ export default function VideoSession() {
       </div>
     )
   }
+
+  const connectionLabel =
+    phase === 'requesting-media'
+      ? 'Starting camera…'
+      : phase === 'waiting'
+        ? `Waiting for ${counterpartName} to join…`
+        : phase === 'connecting'
+          ? 'Connecting…'
+          : null
 
   return (
     <div className="flex h-full flex-col bg-navy-950 text-white">
@@ -96,8 +122,15 @@ export default function VideoSession() {
         <div className="flex items-center gap-2">
           {!ended ? (
             <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs font-medium">
-              <span className="h-2 w-2 animate-pulse rounded-full bg-red-500" />
-              LIVE · {elapsed}
+              <span
+                className={cn(
+                  'h-2 w-2 rounded-full',
+                  phase === 'connected'
+                    ? 'animate-pulse bg-red-500'
+                    : 'bg-amber-400',
+                )}
+              />
+              {phase === 'connected' ? `LIVE · ${elapsed}` : 'Connecting'}
             </span>
           ) : (
             <span className="inline-flex items-center gap-2 rounded-full bg-emerald-500/20 px-3 py-1.5 text-xs font-medium text-emerald-300">
@@ -111,16 +144,38 @@ export default function VideoSession() {
       <div className="grid flex-1 gap-4 overflow-y-auto p-4 lg:grid-cols-3">
         {/* Video area */}
         <div className="flex flex-col gap-4 lg:col-span-2">
+          {mediaError && !ended && (
+            <div className="rounded-2xl border border-amber-400/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+              <span className="font-semibold">Camera / microphone unavailable. </span>
+              {mediaError.message}
+            </div>
+          )}
+
           <div className="grid flex-1 gap-4 sm:grid-cols-2">
-            <VideoTile name={counterpartName} muted={false} camOff={false} />
-            <VideoTile name={`${selfName} (You)`} muted={!micOn} camOff={!camOn} />
+            <VideoTile
+              name={counterpartName}
+              videoRef={setRemoteVideoEl}
+              muted={remoteMuted}
+              camOff={remoteCamOff}
+              placeholder={ended ? 'Session ended' : connectionLabel}
+              showPlaceholder={ended || phase !== 'connected'}
+            />
+            <VideoTile
+              name={`${selfName} (You)`}
+              videoRef={setLocalVideoEl}
+              muted={!micOn}
+              camOff={!camOn}
+              isSelf
+              placeholder={ended ? 'Camera off' : null}
+              showPlaceholder={ended || !camOn}
+            />
           </div>
 
           {/* Control bar */}
           <div className="flex items-center justify-center gap-3 rounded-2xl bg-white/5 p-3">
             <ControlButton
               active={micOn}
-              onClick={() => setMicOn((v) => !v)}
+              onClick={toggleMic}
               label={micOn ? 'Mute' : 'Unmute'}
               disabled={ended}
             >
@@ -132,7 +187,7 @@ export default function VideoSession() {
             </ControlButton>
             <ControlButton
               active={camOn}
-              onClick={() => setCamOn((v) => !v)}
+              onClick={toggleCam}
               label={camOn ? 'Stop video' : 'Start video'}
               disabled={ended}
             >
@@ -144,9 +199,10 @@ export default function VideoSession() {
             </ControlButton>
             <ControlButton
               active={sharing}
-              onClick={() => setSharing((v) => !v)}
-              label="Share screen"
+              onClick={() => void toggleShare()}
+              label={sharing ? 'Stop sharing' : 'Share screen'}
               disabled={ended}
+              activeTone="brand"
             >
               <ScreenShareIcon className="h-5 w-5" />
             </ControlButton>
@@ -218,19 +274,48 @@ export default function VideoSession() {
 
 function VideoTile({
   name,
+  videoRef,
   muted,
   camOff,
+  isSelf,
+  placeholder,
+  showPlaceholder,
 }: {
   name: string
+  videoRef: (el: HTMLVideoElement | null) => void
   muted: boolean
   camOff: boolean
+  isSelf?: boolean
+  placeholder?: string | null
+  showPlaceholder?: boolean
 }) {
   return (
     <div className="relative flex min-h-[200px] items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-navy-800 to-navy-950 ring-1 ring-white/10">
-      <div className="flex flex-col items-center gap-3">
-        <Avatar name={name} size="lg" />
-        {camOff && <span className="text-xs text-white/50">Camera off</span>}
-      </div>
+      {/* Real media. `muted` on self is required or the room echoes. */}
+      <video
+        ref={videoRef}
+        autoPlay
+        playsInline
+        muted={isSelf}
+        className={cn(
+          'h-full w-full object-cover',
+          // Mirror your own preview, like every other conferencing app.
+          isSelf && 'scale-x-[-1]',
+          showPlaceholder && 'invisible',
+        )}
+      />
+
+      {showPlaceholder && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
+          <Avatar name={name} size="lg" />
+          {(placeholder ?? (camOff ? 'Camera off' : null)) && (
+            <span className="px-4 text-center text-xs text-white/50">
+              {placeholder ?? 'Camera off'}
+            </span>
+          )}
+        </div>
+      )}
+
       <div className="absolute bottom-3 left-3 flex items-center gap-2 rounded-lg bg-black/40 px-2.5 py-1 text-xs font-medium backdrop-blur">
         {muted && <MicOffIcon className="h-3.5 w-3.5 text-red-400" />}
         {name}
@@ -244,12 +329,14 @@ function ControlButton({
   onClick,
   label,
   disabled,
+  activeTone = 'neutral',
   children,
 }: {
   active: boolean
   onClick: () => void
   label: string
   disabled?: boolean
+  activeTone?: 'neutral' | 'brand'
   children: React.ReactNode
 }) {
   return (
@@ -260,7 +347,13 @@ function ControlButton({
       aria-label={label}
       className={cn(
         'flex h-12 w-12 items-center justify-center rounded-full transition disabled:opacity-40',
-        active ? 'bg-white/15 text-white hover:bg-white/25' : 'bg-red-600 text-white hover:bg-red-700',
+        active
+          ? activeTone === 'brand'
+            ? 'bg-brand-500 text-white hover:bg-brand-600'
+            : 'bg-white/15 text-white hover:bg-white/25'
+          : activeTone === 'brand'
+            ? 'bg-white/15 text-white hover:bg-white/25'
+            : 'bg-red-600 text-white hover:bg-red-700',
       )}
     >
       {children}
