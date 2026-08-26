@@ -1,17 +1,34 @@
 @import 'tailwindcss';
 
-/* ICONSULTA base theme -------------------------------------------------------*/
+/* ICONSULTA design system --------------------------------------------------- */
+/* Deep navy = primary/brand chrome (buttons, hero, sidebar active, dark cards). */
+/* Indigo/periwinkle (brand-*) = selection accent + "blue" status.               */
+/* Violet (Tailwind built-in) = AI features. emerald/amber/red = semantics.      */
 @theme {
-  --color-brand-50: #eef6ff;
-  --color-brand-100: #d9ebff;
-  --color-brand-200: #bcdcff;
-  --color-brand-300: #8ec6ff;
-  --color-brand-400: #59a6ff;
-  --color-brand-500: #3282ff;
-  --color-brand-600: #1b60f5;
-  --color-brand-700: #144ce1;
-  --color-brand-800: #173fb6;
-  --color-brand-900: #19398f;
+  /* Deep navy scale */
+  --color-navy-50: #eef2fb;
+  --color-navy-100: #d9e1f4;
+  --color-navy-200: #b3c3e8;
+  --color-navy-300: #8098d1;
+  --color-navy-400: #4f6bb0;
+  --color-navy-500: #2f4a8a;
+  --color-navy-600: #21386e;
+  --color-navy-700: #1a2d59;
+  --color-navy-800: #132244;
+  --color-navy-900: #0f1e3c;
+  --color-navy-950: #0a1730;
+
+  /* Indigo / periwinkle accent (retuned brand-*; keeps existing brand-* usages) */
+  --color-brand-50: #eef1ff;
+  --color-brand-100: #e0e4ff;
+  --color-brand-200: #c7ccff;
+  --color-brand-300: #a5adfc;
+  --color-brand-400: #828cf8;
+  --color-brand-500: #6a72f0;
+  --color-brand-600: #5457e6;
+  --color-brand-700: #4649c7;
+  --color-brand-800: #3a3ca0;
+  --color-brand-900: #33357f;
 }
 
 html,
@@ -22,9 +39,29 @@ body,
 
 body {
   margin: 0;
-  background: #f8fafc;
+  background: #f1f5f9; /* slate-100 — the app canvas */
   color: #0f172a;
   font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
     Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Subtle dotted texture used behind the auth screen. */
+.bg-dotted {
+  background-image: radial-gradient(rgba(15, 30, 60, 0.06) 1px, transparent 1px);
+  background-size: 18px 18px;
+}
+
+/* Thin scrollbars for in-card scroll regions (transcript, tables). */
+.scroll-slim::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.scroll-slim::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+.scroll-slim::-webkit-scrollbar-track {
+  background: transparent;
 }

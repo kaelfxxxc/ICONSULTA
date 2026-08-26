@@ -51,9 +51,9 @@ export function statusTone(
 ): 'gray' | 'green' | 'amber' | 'red' | 'blue' {
   switch (status) {
     case 'approved':
-      return 'blue'
+      return 'green' // shown as "Confirmed"
     case 'completed':
-      return 'green'
+      return 'blue'
     case 'pending':
       return 'amber'
     case 'rejected':
@@ -61,5 +61,23 @@ export function statusTone(
       return 'red'
     default:
       return 'gray'
+  }
+}
+
+/** Human label for an appointment status (design calls 'approved' "Confirmed"). */
+export function statusLabel(status: AppointmentStatus): string {
+  switch (status) {
+    case 'approved':
+      return 'Confirmed'
+    case 'pending':
+      return 'Pending'
+    case 'completed':
+      return 'Completed'
+    case 'rejected':
+      return 'Rejected'
+    case 'cancelled':
+      return 'Cancelled'
+    default:
+      return status
   }
 }
