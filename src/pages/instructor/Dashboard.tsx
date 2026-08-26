@@ -9,7 +9,6 @@ import {
 import { useAvailability } from '../../hooks/useInstructors'
 import { AiSummaryPanel, DateBlock, KpiCard } from '../../components/dashboard'
 import {
-  Avatar,
   Badge,
   EmptyState,
   Loader,

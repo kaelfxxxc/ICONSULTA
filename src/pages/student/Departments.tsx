@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useInstructors } from '../../hooks/useInstructors'
 import {
@@ -20,14 +20,9 @@ import type { Department, InstructorDirectoryEntry } from '../../types'
 
 export default function StudentDepartments() {
   const [params, setParams] = useSearchParams()
-  const [search, setSearch] = useState(() => params.get('q') ?? '')
+  // The URL (?q=, driven by the topbar) is the single source of truth for search.
+  const search = params.get('q') ?? ''
   const [dept, setDept] = useState<Department | 'all'>('all')
-
-  // Keep local search in sync when the topbar drives ?q=.
-  useEffect(() => {
-    const q = params.get('q') ?? ''
-    setSearch((prev) => (prev === q ? prev : q))
-  }, [params])
 
   const { data: instructors, isLoading } = useInstructors({ search })
 
@@ -42,7 +37,6 @@ export default function StudentDepartments() {
   const visible = dept === 'all' ? grouped : grouped.filter((g) => g.code === dept)
 
   function onSearchChange(value: string) {
-    setSearch(value)
     const next = new URLSearchParams(params)
     if (value.trim()) next.set('q', value)
     else next.delete('q')

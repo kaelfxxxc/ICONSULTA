@@ -142,7 +142,7 @@ export async function listAdminUsers(
     const student = firstOf<{ department: Department | null }>(u.student)
     const instructor = firstOf<{ department: Department | null }>(u.instructor)
     const department = student?.department ?? instructor?.department ?? null
-    return { ...(u as User), department }
+    return { ...(u as unknown as User), department }
   })
 
   return { rows, count: count ?? 0, page, pageSize: ADMIN_USERS_PAGE_SIZE }
