@@ -1,0 +1,36 @@
+# Supabase CLI configuration for ICONSULTA.
+# Link to the remote project before pushing:  supabase link --project-ref llbxwmzruzwboceliftc
+# Push schema:                                 supabase db push
+# Deploy a function:                           supabase functions deploy <name>
+
+project_id = "iconsulta"
+
+[db]
+# Postgres major version of the remote project (Supabase currently provisions 15).
+major_version = 15
+
+[api]
+enabled = true
+schemas = ["public"]
+extra_search_path = ["public"]
+
+# ---- Edge Functions -----------------------------------------------------------
+# All functions require a valid Supabase JWT (verify_jwt = true, the default);
+# each function additionally checks role/ownership internally.
+[functions.book-appointment]
+verify_jwt = true
+
+[functions.respond-to-request]
+verify_jwt = true
+
+[functions.end-session]
+verify_jwt = true
+
+[functions.generate-summary]
+verify_jwt = true
+
+[functions.admin-manage-user]
+verify_jwt = true
+
+[functions.admin-metrics]
+verify_jwt = true
