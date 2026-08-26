@@ -1,26 +1,3 @@
-// ============================================================================
-// ICONSULTA — generate-summary (optional, deploy-gated) Edge Function
-//
-// Called best-effort by the browser client (services/session.service.ts) right
-// after an appointment is marked `completed`. The 0006 DB trigger has already
-// bootstrapped an appointment_summaries row with a placeholder; this function
-// overwrites `summary` (and, if it captured one, `transcript`) with real text.
-//
-// Graceful degradation is a first-class requirement:
-//   * If HF_API_KEY is unset            -> 200 { skipped } (placeholder stands).
-//   * If the model call fails/times out -> 200 { skipped } (placeholder stands).
-// The client ignores the response either way, so this must never hard-fail the
-// user's "End Session" action.
-//
-// verify_jwt = true (config.toml): the gateway guarantees a signed-in caller.
-// We additionally verify the caller is a party (student or instructor) to the
-// appointment before touching its summary — defense in depth per the RLS model.
-//
-// Deploy:  supabase functions deploy generate-summary
-// Secrets: supabase secrets set HF_API_KEY=hf_xxx
-//          (SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY are injected by the platform)
-// ============================================================================
-
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const HF_MODEL = 'facebook/bart-large-cnn'

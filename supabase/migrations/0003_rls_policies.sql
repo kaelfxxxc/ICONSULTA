@@ -1,10 +1,3 @@
--- ============================================================================
--- ICONSULTA — 0003 RLS policies
--- Base grants (PostgREST uses the `authenticated` role; RLS then filters rows).
--- Every table has RLS enabled. Writes that create cross-user side effects go
--- through Edge Functions using the service role, which bypasses RLS entirely.
--- ============================================================================
-
 grant usage on schema public to anon, authenticated;
 grant select, insert, update, delete on all tables in schema public to authenticated;
 

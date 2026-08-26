@@ -1,8 +1,3 @@
--- ============================================================================
--- ICONSULTA — 0001 schema
--- Core tables (uuid PKs). RLS is enabled in 0003 after helper fns (0002).
--- ============================================================================
-
 create extension if not exists pgcrypto;
 
 -- 1. users — public profile extending auth.users -------------------------------

@@ -1,7 +1,3 @@
--- ============================================================================
--- ICONSULTA — 0005 triggers, guards, indexes, realtime
--- ============================================================================
-
 -- updated_at maintenance ------------------------------------------------------
 create or replace function public.set_updated_at()
 returns trigger language plpgsql as $$

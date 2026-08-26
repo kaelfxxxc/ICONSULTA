@@ -1,21 +1,3 @@
--- ============================================================================
--- ICONSULTA — 0006 client-driven side effects (SECURITY DEFINER triggers)
---
--- The RLS model (0003) intentionally leaves two write gaps that were meant to
--- be filled by service-role Edge Functions:
---   * notifications        — no user-facing INSERT policy
---   * appointment_summaries — no user-facing INSERT policy
--- Deploying Edge Functions is optional for this build, so instead we move those
--- side effects into AFTER triggers on `appointments`. They run SECURITY DEFINER
--- (as the table owner) and therefore bypass RLS for the rows they create, which
--- lets the browser client drive the entire lifecycle:
---   student books  -> instructor is notified
---   status changes -> the counterparty is notified
---   -> 'completed' -> a video_sessions row + an appointment_summaries row are
---                     bootstrapped (the optional generate-summary function may
---                     later overwrite `summary` with real AI text).
--- ============================================================================
-
 -- 1. Notify the counterparty on create + on any status change -----------------
 create or replace function public.notify_appointment_event()
 returns trigger

@@ -1,11 +1,3 @@
--- ============================================================================
--- ICONSULTA — 0004 auth bootstrapping
--- On sign-up (auth.users insert) create the public.users row + the role-specific
--- profile, reading role/name/department from the metadata passed to signUp().
--- SECURITY DEFINER so it can write past RLS. Admins are provisioned server-side
--- (seed / admin-manage-user Edge Function), never via self-signup UI.
--- ============================================================================
-
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql security definer set search_path = public

@@ -1,11 +1,3 @@
--- ============================================================================
--- ICONSULTA — 0002 RLS helper functions
--- SECURITY DEFINER functions run as the owner and bypass RLS on the tables they
--- read. This is what breaks the classic "policy on users reads users" recursion:
--- policies call these helpers instead of sub-selecting the user tables directly.
--- search_path is locked to public to prevent search_path hijacking.
--- ============================================================================
-
 -- Role of the current auth user (null if no profile row yet).
 create or replace function public.current_user_role()
 returns text
