@@ -59,6 +59,14 @@ export function AppRouter() {
         }
       />
       <Route
+        path="/login/admin"
+        element={
+          <PublicOnly>
+            <Login variant="admin" />
+          </PublicOnly>
+        }
+      />
+      <Route
         path="/forgot-password"
         element={
           <PublicOnly>

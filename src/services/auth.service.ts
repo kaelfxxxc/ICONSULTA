@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
-import type { SignInInput, SignUpInput } from '../types'
+import type { Role, SignInInput, SignUpInput } from '../types'
 
 // A session-less client used ONLY for sign-up. Email confirmation is bypassed
 // and new users are routed to the Sign In screen to log in with the credentials
@@ -19,14 +19,27 @@ export async function signIn({ email, password }: SignInInput) {
     password,
   })
   if (error) throw error
-  // Best-effort last_login stamp (RLS: users_update_self).
+
+  // Resolve the account's real role so the caller can route straight to the
+  // right dashboard. The Sign In form has no role picker (and must not trust
+  // one) — an admin signing in should land on /admin, not bounce via /student.
+  let role: Role | null = null
   if (data.user) {
+    const { data: row } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', data.user.id)
+      .maybeSingle()
+    role = (row as { role: Role } | null)?.role ?? null
+
+    // Best-effort last_login stamp (RLS: users_update_self).
     await supabase
       .from('users')
       .update({ last_login: new Date().toISOString() })
       .eq('id', data.user.id)
   }
-  return data
+
+  return { ...data, role }
 }
 
 export async function signUp({

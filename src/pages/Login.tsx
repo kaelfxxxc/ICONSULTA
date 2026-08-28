@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { signIn, signUp } from '../services/auth.service'
+import { Link, useNavigate } from 'react-router-dom'
+import { signIn, signOut, signUp } from '../services/auth.service'
 import { ROLE_HOME } from '../utils/constants'
 import { DEPARTMENTS } from '../utils/constants'
 import { cn } from '../lib/utils'
@@ -28,8 +28,9 @@ const FEATURES = [
   { icon: ShieldCheckIcon, text: 'Secure, role-based access for your campus' },
 ]
 
-export default function Login() {
+export default function Login({ variant = 'default' }: { variant?: 'default' | 'admin' }) {
   const navigate = useNavigate()
+  const isAdminPortal = variant === 'admin'
   const [mode, setMode] = useState<Mode>('signin')
   const [role, setRole] = useState<SignupRole>('student')
   const [name, setName] = useState('')
@@ -49,8 +50,21 @@ export default function Login() {
     setLoading(true)
     try {
       if (mode === 'signin') {
-        await signIn({ email, password })
-        navigate(ROLE_HOME[role], { replace: true })
+        // Route by the account's ACTUAL role, not the Student/Instructor toggle
+        // above — that picker only applies to sign-up. Admins land on /admin.
+        const { role: actualRole } = await signIn({ email, password })
+
+        // The admin portal admits admins only; anyone else is signed back out
+        // so a student credential can't sit half-authenticated here.
+        if (isAdminPortal && actualRole !== 'admin') {
+          await signOut()
+          setError(
+            'That account is not an administrator. Use the main sign-in page.',
+          )
+          return
+        }
+
+        navigate(ROLE_HOME[actualRole ?? role], { replace: true })
       } else {
         await signUp({
           email,
@@ -130,16 +144,30 @@ export default function Login() {
             </div>
 
             <h2 className="text-2xl font-bold tracking-tight text-slate-900">
-              {mode === 'signin' ? 'Welcome back' : 'Create your account'}
+              {isAdminPortal
+                ? 'Administrator sign in'
+                : mode === 'signin'
+                  ? 'Welcome back'
+                  : 'Create your account'}
             </h2>
             <p className="mt-1 text-sm text-slate-500">
-              {mode === 'signin'
-                ? 'Sign in to manage your consultations.'
-                : 'Join ICONSULTA to start booking sessions.'}
+              {isAdminPortal
+                ? 'Restricted access — administrator accounts only.'
+                : mode === 'signin'
+                  ? 'Sign in to manage your consultations.'
+                  : 'Join ICONSULTA to start booking sessions.'}
             </p>
 
-            {/* Mode tabs */}
-            <div className="mt-6 grid grid-cols-2 gap-1 rounded-xl bg-slate-100 p-1">
+            {isAdminPortal && (
+              <div className="mt-5 flex items-center gap-2 rounded-xl border border-navy-200 bg-navy-50 px-3 py-2.5 text-sm font-medium text-navy-900">
+                <ShieldCheckIcon className="h-4 w-4" />
+                Admin portal
+              </div>
+            )}
+
+            {/* Mode tabs — admins are provisioned server-side, never self-signup */}
+            {!isAdminPortal && (
+              <div className="mt-6 grid grid-cols-2 gap-1 rounded-xl bg-slate-100 p-1">
               {(['signin', 'signup'] as const).map((m) => (
                 <button
                   key={m}
@@ -159,10 +187,12 @@ export default function Login() {
                   {m === 'signin' ? 'Sign In' : 'Sign Up'}
                 </button>
               ))}
-            </div>
+              </div>
+            )}
 
-            {/* Role cards */}
-            <div className="mt-5 grid grid-cols-2 gap-3">
+            {/* Role cards — sign-up only; sign-in reads the role from the DB */}
+            {!isAdminPortal && (
+              <div className="mt-5 grid grid-cols-2 gap-3">
               {(
                 [
                   { key: 'student', label: 'Student', icon: IdCardIcon },
@@ -184,7 +214,8 @@ export default function Login() {
                   {r.label}
                 </button>
               ))}
-            </div>
+              </div>
+            )}
 
             <form onSubmit={handleSubmit} className="mt-5 space-y-4">
               {mode === 'signup' && (
@@ -305,9 +336,28 @@ export default function Login() {
               </button>
             </form>
 
-            <p className="mt-6 text-center text-xs text-slate-400">
-              Use your MCC-issued email to access all campus features.
-            </p>
+            {isAdminPortal ? (
+              <p className="mt-6 text-center text-xs text-slate-400">
+                Not an administrator?{' '}
+                <Link
+                  to="/login"
+                  className="font-medium text-brand-600 hover:text-brand-700"
+                >
+                  Student / instructor sign in
+                </Link>
+              </p>
+            ) : (
+              <p className="mt-6 text-center text-xs text-slate-400">
+                Use your MCC-issued email to access all campus features.
+                <br />
+                <Link
+                  to="/login/admin"
+                  className="mt-1 inline-block font-medium text-slate-500 hover:text-navy-900"
+                >
+                  Administrator sign in
+                </Link>
+              </p>
+            )}
           </div>
         </div>
       </div>
