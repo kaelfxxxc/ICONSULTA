@@ -23,7 +23,7 @@ type Mode = 'signin' | 'signup'
 type SignupRole = 'student' | 'instructor'
 
 const FEATURES = [
-  { icon: VideoIcon, text: 'Face-to-face video consultations with your faculty' },
+  { icon: VideoIcon, text: 'Face-to-face video consultations with your Instructor' },
   { icon: SparklesIcon, text: 'AI-generated summaries after every session' },
   { icon: ShieldCheckIcon, text: 'Secure, role-based access for your campus' },
 ]
