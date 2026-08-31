@@ -1,32 +1,29 @@
 import { useState } from 'react'
-import type { FormEvent } from 'react'
+import type { ComponentType, FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { signIn, signOut, signUp } from '../services/auth.service'
-import { ROLE_HOME } from '../utils/constants'
-import { DEPARTMENTS } from '../utils/constants'
+import { ROLE_HOME, DEPARTMENTS } from '../utils/constants'
 import { cn } from '../lib/utils'
 import {
+  ArrowUpRightIcon,
+  BookOpenIcon,
+  CheckIcon,
+  ChevronDownIcon,
   EyeIcon,
   EyeOffIcon,
+  fieldClass,
   GraduationCapIcon,
-  IdCardIcon,
+  Input,
   LockIcon,
   Logo,
   MailIcon,
   ShieldCheckIcon,
   SparklesIcon,
-  VideoIcon,
 } from '../components/common'
 import type { Department } from '../types'
 
 type Mode = 'signin' | 'signup'
 type SignupRole = 'student' | 'instructor'
-
-const FEATURES = [
-  { icon: VideoIcon, text: 'Face-to-face video consultations with your Instructor' },
-  { icon: SparklesIcon, text: 'AI-generated summaries after every session' },
-  { icon: ShieldCheckIcon, text: 'Secure, role-based access for your campus' },
-]
 
 export default function Login({ variant = 'default' }: { variant?: 'default' | 'admin' }) {
   const navigate = useNavigate()
@@ -87,177 +84,250 @@ export default function Login({ variant = 'default' }: { variant?: 'default' | '
     }
   }
 
-  return (
-    // items-center, not items-stretch: the card takes its natural height and
-    // centres, instead of being stretched to the viewport and leaving dead bands
-    // above and below the form. min-h-full grows if the card is taller, so
-    // centring never clips it on short screens.
-    <div className="flex min-h-full items-center bg-slate-100">
-      <div className="mx-auto flex w-full max-w-6xl flex-col overflow-hidden shadow-xl md:my-8 md:flex-row md:rounded-3xl">
-        {/* Hero panel — gradient + dot texture, no photo to keep in sync.
-            overflow-hidden keeps the glow below from bleeding onto the form panel. */}
-        <div className="relative hidden w-full overflow-hidden bg-gradient-to-br from-navy-800 via-navy-900 to-navy-950 md:block md:w-[46%]">
-          <div className="bg-dotted-light absolute inset-0" />
-          {/* Warm-up glow so the flat navy does not read as dead space */}
-          <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-brand-500/20 blur-3xl" />
-          <div className="relative flex h-full flex-col p-10 text-white">
-            {/* Logo and pitch ride together as one vertically-centred group; the
-                copyright stays pinned to the bottom as a footer. */}
-            <div className="flex flex-1 flex-col justify-center gap-10">
-              {/* The lockup is opaque white-backed artwork, so on navy it sits in a
-                  white plaque instead of bare. Sized by height; width follows, and
-                  the logo's own max-w-full scales it down rather than overflowing.
-                  w-fit shrinks the plaque to the artwork, so mx-auto is what centres
-                  it — the flex column would otherwise leave it at the start edge. */}
-              <div className="mx-auto w-fit max-w-full rounded-2xl bg-white px-4 py-3 shadow-lg">
-                <Logo className="h-10 w-auto lg:h-14" />
-              </div>
+  const eyebrow = isAdminPortal
+    ? 'Secure administrator access'
+    : mode === 'signin'
+      ? 'Continue to your workspace'
+      : 'Join ICONSULTA'
+  const heading = isAdminPortal
+    ? 'Administrator sign in.'
+    : mode === 'signin'
+      ? 'Welcome back.'
+      : 'Create your account.'
+  const subtext = isAdminPortal
+    ? 'Restricted access — administrator accounts only.'
+    : mode === 'signin'
+      ? 'Sign in to keep your consultations moving.'
+      : 'Start booking sessions with MCC faculty.'
+  const ctaLabel = mode === 'signin' ? 'Sign in to ICONSULTA' : 'Create your account'
 
-              <div>
-                <h1 className="text-3xl font-bold leading-tight">
-                  Academic consultations,
-                  <br />
-                  thoughtfully scheduled.
-                </h1>
-                <p className="mt-3 max-w-sm text-sm text-navy-200">
-                  Book, meet, and follow up with MCC faculty — all in one place.
-                </p>
-                <ul className="mt-8 space-y-4">
-                  {FEATURES.map((f) => (
-                    <li key={f.text} className="flex items-start gap-3">
-                      <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/10">
-                        <f.icon className="h-4 w-4" />
-                      </span>
-                      <span className="text-sm text-navy-100">{f.text}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+  return (
+    <div className="flex min-h-full flex-col bg-slate-50 text-slate-900">
+      {/* Top bar spans the full width above both columns. */}
+      <header className="flex items-center justify-between border-b border-slate-200/70 px-6 py-4 lg:px-10">
+        <div className="flex items-center gap-2 text-sm font-medium text-slate-600">
+          <BookOpenIcon className="h-4 w-4 text-navy-900" />
+          Academic consultation portal
+        </div>
+        <p className="hidden text-xs font-medium uppercase tracking-[0.14em] text-slate-400 sm:block">
+          MCC campus access · Secure workspace
+        </p>
+      </header>
+
+      <main className="mx-auto grid w-full max-w-6xl flex-1 gap-10 px-6 py-10 lg:grid-cols-2 lg:gap-16 lg:px-10 lg:py-14">
+        {/* Editorial column — desktop only; the card carries the brand on mobile. */}
+        <section className="animate-rise hidden flex-col justify-between lg:flex">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                Make your next question count
+              </span>
+              <span className="text-xs font-medium text-slate-300">01 / 01</span>
             </div>
 
-            <p className="text-xs text-navy-300">
-              © {new Date().getFullYear()} MCC · ICONSULTA
+            <Logo className="mt-8 h-11 w-auto" />
+
+            <h1 className="mt-10 text-5xl font-extrabold leading-[1.04] tracking-tight xl:text-6xl">
+              <span className="text-navy-900">Better questions</span>
+              <br />
+              <span className="text-slate-400">start with time.</span>
+            </h1>
+
+            <p className="mt-6 max-w-md text-[15px] leading-relaxed text-slate-500">
+              Book a thoughtful conversation with MCC faculty, keep the context,
+              and move your learning forward with confidence.
             </p>
           </div>
-        </div>
 
-        {/* Form panel */}
-        <div className="flex w-full items-center justify-center bg-white p-8 md:w-[54%] md:p-12">
-          <div className="w-full max-w-sm">
-            {/* White form panel, so the lockup's own white ground needs no plaque */}
-            <div className="mb-6 md:hidden">
+          <div className="mt-12">
+            <div className="grid grid-cols-2 gap-4">
+              <Feature
+                icon={SparklesIcon}
+                title="One calm place"
+                subtitle="For every consultation detail"
+              />
+              <Feature
+                icon={ShieldCheckIcon}
+                title="Built for campus"
+                subtitle="Secure access for your next step"
+              />
+            </div>
+            <div className="mt-8 flex items-center justify-between text-xs text-slate-400">
+              <span>© {new Date().getFullYear()} MCC · ICONSULTA</span>
+              <span className="tracking-wide">Book · Connect · Consult</span>
+            </div>
+          </div>
+        </section>
+
+        {/* Login card */}
+        <section className="flex items-center justify-center">
+          <div className="w-full max-w-md">
+            <div className="mb-6 lg:hidden">
               <Logo className="h-9 w-auto" />
             </div>
 
-            <h2 className="text-2xl font-bold tracking-tight text-slate-900">
-              {isAdminPortal
-                ? 'Administrator sign in'
-                : mode === 'signin'
-                  ? 'Welcome back'
-                  : 'Create your account'}
-            </h2>
-            <p className="mt-1 text-sm text-slate-500">
-              {isAdminPortal
-                ? 'Restricted access — administrator accounts only.'
-                : mode === 'signin'
-                  ? 'Sign in to manage your consultations.'
-                  : 'Join ICONSULTA to start booking sessions.'}
-            </p>
+            <div className="animate-rise relative rounded-[28px] rounded-tl-md border border-slate-200/80 bg-white p-6 shadow-[0_24px_70px_-28px_rgba(15,30,60,0.35)] sm:p-8">
+              {/* Small navy accent tab riding the top-left edge. */}
+              <span className="absolute left-7 top-0 h-1 w-12 -translate-y-1/2 rounded-full bg-navy-900" />
 
-            {isAdminPortal && (
-              <div className="mt-5 flex items-center gap-2 rounded-xl border border-navy-200 bg-navy-50 px-3 py-2.5 text-sm font-medium text-navy-900">
-                <ShieldCheckIcon className="h-4 w-4" />
-                Admin portal
-              </div>
-            )}
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                {eyebrow}
+              </p>
+              <h2 className="mt-2 text-3xl font-bold tracking-tight text-slate-900">
+                {heading}
+              </h2>
+              <p className="mt-2 text-sm text-slate-500">{subtext}</p>
 
-            {/* Mode tabs — admins are provisioned server-side, never self-signup */}
-            {!isAdminPortal && (
-              <div className="mt-6 grid grid-cols-2 gap-1 rounded-xl bg-slate-100 p-1">
-              {(['signin', 'signup'] as const).map((m) => (
-                <button
-                  key={m}
-                  type="button"
-                  onClick={() => {
-                    setMode(m)
-                    setError(null)
-                    setNotice(null)
-                  }}
-                  className={cn(
-                    'rounded-lg py-2 text-sm font-semibold transition',
-                    mode === m
-                      ? 'bg-white text-navy-900 shadow-sm'
-                      : 'text-slate-500 hover:text-slate-700',
-                  )}
-                >
-                  {m === 'signin' ? 'Sign In' : 'Sign Up'}
-                </button>
-              ))}
-              </div>
-            )}
+              {isAdminPortal && (
+                <div className="mt-5 flex items-center gap-2 rounded-xl border border-navy-200 bg-navy-50 px-3 py-2.5 text-sm font-medium text-navy-900">
+                  <ShieldCheckIcon className="h-4 w-4" />
+                  Admin portal
+                </div>
+              )}
 
-            {/* Role cards — sign-up only; sign-in reads the role from the DB */}
-            {!isAdminPortal && (
-              <div className="mt-5 grid grid-cols-2 gap-3">
-              {(
-                [
-                  { key: 'student', label: 'Student', icon: IdCardIcon },
-                  { key: 'instructor', label: 'Instructor', icon: GraduationCapIcon },
-                ] as const
-              ).map((r) => (
-                <button
-                  key={r.key}
-                  type="button"
-                  onClick={() => setRole(r.key)}
-                  className={cn(
-                    'flex items-center gap-2.5 rounded-xl border p-3 text-left text-sm font-medium transition',
-                    role === r.key
-                      ? 'border-brand-500 bg-brand-50 text-brand-700 ring-1 ring-brand-500'
-                      : 'border-slate-200 text-slate-600 hover:border-slate-300',
-                  )}
-                >
-                  <r.icon className="h-5 w-5" />
-                  {r.label}
-                </button>
-              ))}
-              </div>
-            )}
+              {/* Mode tabs — admins are provisioned server-side, never self-signup. */}
+              {!isAdminPortal && (
+                <div className="mt-6 flex gap-6 border-b border-slate-200">
+                  {(['signin', 'signup'] as const).map((m) => (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => {
+                        setMode(m)
+                        setError(null)
+                        setNotice(null)
+                      }}
+                      className={cn(
+                        '-mb-px border-b-2 pb-3 text-sm font-semibold transition',
+                        mode === m
+                          ? 'border-navy-900 text-navy-900'
+                          : 'border-transparent text-slate-400 hover:text-slate-600',
+                      )}
+                    >
+                      {m === 'signin' ? 'Sign in' : 'Sign up'}
+                    </button>
+                  ))}
+                </div>
+              )}
 
-            <form onSubmit={handleSubmit} className="mt-5 space-y-4">
-              {mode === 'signup' && (
-                <Field label="Full name">
-                  <input
+              {/* Role cards — the picker drives sign-up; sign-in reads role from the DB. */}
+              {!isAdminPortal && (
+                <div className="mt-5 grid grid-cols-2 gap-3">
+                  {(
+                    [
+                      {
+                        key: 'student',
+                        label: 'Student',
+                        sub: 'Find support',
+                        icon: GraduationCapIcon,
+                      },
+                      {
+                        key: 'instructor',
+                        label: 'Instructor',
+                        sub: 'Guide learners',
+                        icon: BookOpenIcon,
+                      },
+                    ] as const
+                  ).map((r) => {
+                    const selected = role === r.key
+                    return (
+                      <button
+                        key={r.key}
+                        type="button"
+                        onClick={() => setRole(r.key)}
+                        className={cn(
+                          'relative flex items-start gap-3 rounded-2xl border p-3.5 text-left transition',
+                          selected
+                            ? 'border-navy-900 bg-navy-50'
+                            : 'border-slate-200 hover:border-slate-300',
+                        )}
+                      >
+                        <span
+                          className={cn(
+                            'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border',
+                            selected
+                              ? 'border-navy-200 bg-white text-navy-900'
+                              : 'border-slate-200 bg-slate-50 text-slate-500',
+                          )}
+                        >
+                          <r.icon className="h-4 w-4" />
+                        </span>
+                        <span className="min-w-0">
+                          <span className="block text-sm font-semibold text-slate-900">
+                            {r.label}
+                          </span>
+                          <span className="block text-xs text-slate-500">
+                            {r.sub}
+                          </span>
+                        </span>
+                        <span
+                          className={cn(
+                            'absolute right-3 top-3 flex h-4 w-4 items-center justify-center rounded-full border',
+                            selected
+                              ? 'border-navy-900 bg-navy-900 text-white'
+                              : 'border-slate-300',
+                          )}
+                        >
+                          {selected && <CheckIcon className="h-3 w-3" />}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+
+              <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+                {mode === 'signup' && (
+                  <Input
+                    label="Full name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     required
                     autoComplete="name"
                     placeholder="Juan Dela Cruz"
-                    className={inputClass}
                   />
-                </Field>
-              )}
+                )}
 
-              <Field label="School email">
-                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
-                  <MailIcon className="h-4 w-4" />
-                </span>
-                <input
+                <Input
+                  label="School email"
                   type="email"
+                  icon={<MailIcon className="h-4 w-4" />}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   autoComplete="email"
                   placeholder="idnumber@mcce.edu.ph"
-                  className={cn(inputClass, 'pl-10')}
                 />
-              </Field>
 
-              <Field label="Password">
-                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
-                  <LockIcon className="h-4 w-4" />
-                </span>
-                <input
+                <Input
+                  label="Password"
+                  labelRight={
+                    mode === 'signin' ? (
+                      <button
+                        type="button"
+                        onClick={() => navigate('/forgot-password')}
+                        className="text-xs font-medium text-navy-700 hover:text-navy-900"
+                      >
+                        Forgot password?
+                      </button>
+                    ) : undefined
+                  }
                   type={showPw ? 'text' : 'password'}
+                  icon={<LockIcon className="h-4 w-4" />}
+                  trailing={
+                    <button
+                      type="button"
+                      onClick={() => setShowPw((v) => !v)}
+                      className="p-1 text-slate-400 hover:text-slate-600"
+                      aria-label={showPw ? 'Hide password' : 'Show password'}
+                    >
+                      {showPw ? (
+                        <EyeOffIcon className="h-4 w-4" />
+                      ) : (
+                        <EyeIcon className="h-4 w-4" />
+                      )}
+                    </button>
+                  }
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -266,127 +336,120 @@ export default function Login({ variant = 'default' }: { variant?: 'default' | '
                     mode === 'signin' ? 'current-password' : 'new-password'
                   }
                   placeholder="••••••••"
-                  className={cn(inputClass, 'pl-10 pr-10')}
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPw((v) => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                  aria-label={showPw ? 'Hide password' : 'Show password'}
-                >
-                  {showPw ? (
-                    <EyeOffIcon className="h-4 w-4" />
-                  ) : (
-                    <EyeIcon className="h-4 w-4" />
-                  )}
-                </button>
-              </Field>
 
-              {mode === 'signup' && role === 'instructor' && (
-                <Field label="Department">
-                  <select
-                    value={department}
-                    onChange={(e) => setDepartment(e.target.value as Department)}
-                    className={cn(inputClass, 'appearance-none')}
-                  >
-                    {DEPARTMENTS.map((d) => (
-                      <option key={d.code} value={d.code}>
-                        {d.name} ({d.code})
-                      </option>
-                    ))}
-                  </select>
-                </Field>
-              )}
+                {mode === 'signup' && role === 'instructor' && (
+                  <label className="block">
+                    <span className="mb-1.5 block text-sm font-medium text-slate-700">
+                      Department
+                    </span>
+                    <span className="relative block">
+                      <select
+                        value={department}
+                        onChange={(e) =>
+                          setDepartment(e.target.value as Department)
+                        }
+                        className={cn(fieldClass, 'appearance-none pr-9')}
+                      >
+                        {DEPARTMENTS.map((d) => (
+                          <option key={d.code} value={d.code}>
+                            {d.name} ({d.code})
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDownIcon className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                    </span>
+                  </label>
+                )}
 
-              {mode === 'signin' && (
-                <div className="flex items-center justify-between text-sm">
-                  <label className="flex items-center gap-2 text-slate-600">
+                {mode === 'signin' && (
+                  <label className="flex items-center gap-2.5 text-sm text-slate-600">
                     <input
                       type="checkbox"
                       checked={remember}
                       onChange={(e) => setRemember(e.target.checked)}
-                      className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                      className="h-4 w-4 rounded border-slate-300 text-navy-900 focus:ring-navy-200"
                     />
-                    Remember me
+                    Remember me on this device
                   </label>
-                  <button
-                    type="button"
-                    onClick={() => navigate('/forgot-password')}
-                    className="font-medium text-brand-600 hover:text-brand-700"
-                  >
-                    Forgot password?
-                  </button>
-                </div>
-              )}
-
-              {error && (
-                <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
-                  {error}
-                </p>
-              )}
-              {notice && (
-                <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
-                  {notice}
-                </p>
-              )}
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="flex w-full items-center justify-center gap-2 rounded-lg bg-navy-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-navy-800 disabled:cursor-not-allowed disabled:bg-navy-300"
-              >
-                {loading && (
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
                 )}
-                {mode === 'signin' ? 'Sign In →' : 'Create Account →'}
-              </button>
-            </form>
 
-            {isAdminPortal ? (
-              <p className="mt-6 text-center text-xs text-slate-400">
-                Not an administrator?{' '}
-                <Link
-                  to="/login"
-                  className="font-medium text-brand-600 hover:text-brand-700"
+                {error && (
+                  <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-600">
+                    {error}
+                  </p>
+                )}
+                {notice && (
+                  <p className="rounded-xl bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+                    {notice}
+                  </p>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="mt-1 flex w-full items-center justify-between gap-3 rounded-xl bg-navy-900 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-navy-900/20 transition hover:bg-navy-800 active:scale-[.99] disabled:cursor-not-allowed disabled:bg-navy-300 disabled:shadow-none"
                 >
-                  Student / instructor sign in
-                </Link>
-              </p>
-            ) : (
-              <p className="mt-6 text-center text-xs text-slate-400">
+                  <span className="flex items-center gap-2">
+                    {loading && (
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                    )}
+                    {ctaLabel}
+                  </span>
+                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/15">
+                    <ArrowUpRightIcon className="h-4 w-4" />
+                  </span>
+                </button>
+              </form>
+
+              <div className="mt-5 flex items-center justify-center gap-1.5 text-xs text-slate-400">
+                <ShieldCheckIcon className="h-3.5 w-3.5" />
                 Use your MCC-issued email to access all campus features.
-                <br />
-                <Link
-                  to="/login/admin"
-                  className="mt-1 inline-block font-medium text-slate-500 hover:text-navy-900"
-                >
-                  Administrator sign in
-                </Link>
-              </p>
-            )}
+              </div>
+
+              <div className="mt-3 border-t border-slate-100 pt-4 text-center">
+                {isAdminPortal ? (
+                  <Link
+                    to="/login"
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-navy-900"
+                  >
+                    Student / instructor sign in
+                    <ArrowUpRightIcon className="h-3 w-3" />
+                  </Link>
+                ) : (
+                  <Link
+                    to="/login/admin"
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-navy-900"
+                  >
+                    Administrator sign in
+                    <ArrowUpRightIcon className="h-3 w-3" />
+                  </Link>
+                )}
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
+        </section>
+      </main>
     </div>
   )
 }
 
-const inputClass =
-  'w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-100'
-
-function Field({
-  label,
-  children,
+function Feature({
+  icon: Icon,
+  title,
+  subtitle,
 }: {
-  label: string
-  children: React.ReactNode
+  icon: ComponentType<{ className?: string }>
+  title: string
+  subtitle: string
 }) {
   return (
-    <label className="block">
-      <span className="mb-1.5 block text-sm font-medium text-slate-700">
-        {label}
+    <div className="rounded-2xl border border-slate-200/70 bg-white p-4">
+      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-navy-50 text-navy-900">
+        <Icon className="h-4 w-4" />
       </span>
-      <span className="relative block">{children}</span>
-    </label>
+      <p className="mt-3 text-sm font-semibold text-slate-800">{title}</p>
+      <p className="mt-0.5 text-xs text-slate-500">{subtitle}</p>
+    </div>
   )
 }

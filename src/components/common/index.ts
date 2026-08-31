@@ -1,5 +1,5 @@
 export { Button } from './Button'
-export { Input } from './Input'
+export { Input, fieldClass } from './Input'
 export { Card } from './Card'
 export { Loader } from './Loader'
 export { Badge } from './Badge'
