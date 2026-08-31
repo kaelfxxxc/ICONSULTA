@@ -1,6 +1,8 @@
 import { supabase } from '../lib/supabase'
+import type { RealtimeChannel, RealtimeChannelState } from '@supabase/supabase-js'
 import type {
   AnalyticsMetric,
+  Appointment,
   Department,
   Role,
   User,
@@ -159,4 +161,33 @@ export async function updateUserStatus(
 export async function updateUserRole(id: string, role: Role): Promise<void> {
   const { error } = await supabase.from('users').update({ role }).eq('id', id)
   if (error) throw error
+}
+
+/** Live admin dashboard: subscribe to analytics_metrics changes (any event) and
+ *  to new appointment requests. analytics_metrics is admin-only via RLS, so only
+ *  admins receive these events. Returns an unsubscribe function. */
+export function subscribeAdminAnalytics(
+  onMetricsChange: () => void,
+  onAppointmentInsert: (appointment: Appointment) => void,
+  onStatus?: (status: RealtimeChannelState) => void,
+): () => void {
+  const channel: RealtimeChannel = supabase
+    .channel('admin-live-analytics')
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'analytics_metrics' },
+      () => onMetricsChange(),
+    )
+    .on(
+      'postgres_changes',
+      { event: 'INSERT', schema: 'public', table: 'appointments' },
+      (payload) => {
+        onAppointmentInsert(payload.new as unknown as Appointment)
+      },
+    )
+    .subscribe((status) => onStatus?.(status))
+
+  return () => {
+    void supabase.removeChannel(channel)
+  }
 }
