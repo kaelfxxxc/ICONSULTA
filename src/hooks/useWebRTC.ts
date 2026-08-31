@@ -114,6 +114,9 @@ export function useWebRTC(roomId: string | undefined, selfId: string | undefined
   const pendingIce = useRef<RTCIceCandidateInit[]>([])
   const makingOffer = useRef(false)
   const endedRef = useRef(false)
+  // The peer's id, learned from the first signal. Used to decide who performs
+  // an ICE restart (the same larger-id initiator rule as the first offer).
+  const remoteIdRef = useRef<string | null>(null)
 
   /** Attach a stream to a <video>, tolerating a ref that mounts later. */
   const bind = useCallback(
@@ -158,6 +161,26 @@ export function useWebRTC(roomId: string | undefined, selfId: string | undefined
     let cancelled = false
     endedRef.current = false
 
+    // Reconnection state — lives here so both start() and the effect's cleanup
+    // can see it. A dropped peer connection is usually transient: we tolerate a
+    // short `disconnected` grace period, then have the *initiator* (the same
+    // side that created the first offer) send a fresh offer with
+    // `iceRestart: true`. ICE re-gathers over the still-live Supabase signaling
+    // path, which often reconnects both ends. After a few failed attempts we
+    // give up and show the waiting state instead of hanging on a dead call.
+    const MAX_RESTART_ATTEMPTS = 3
+    const RESTART_GRACE_MS = 3000
+    let restartAttempts = 0
+    let restartTimer: ReturnType<typeof setTimeout> | null = null
+    let remoteLeft = false
+
+    const clearRestartTimer = () => {
+      if (restartTimer) {
+        clearTimeout(restartTimer)
+        restartTimer = null
+      }
+    }
+
     async function start() {
       setPhase('requesting-media')
       setMediaError(null)
@@ -194,6 +217,46 @@ export function useWebRTC(roomId: string | undefined, selfId: string | undefined
       const inbound = new MediaStream()
       remoteStream.current = inbound
 
+      // ---- Reconnection (ICE restart) ----------------------------------------
+      // Constants/state above (effect scope) — the initiator sends a fresh
+      // `iceRestart: true` offer over signaling after the `disconnected` grace
+      // period; the peer answers, so a reconnect never glares.
+
+      const doRestart = async () => {
+        restartTimer = null
+        if (cancelled || endedRef.current || remoteLeft) return
+        const pc = pcRef.current
+        if (!pc) return
+        const st = pc.iceConnectionState
+        // It recovered while the grace timer was pending — nothing to do.
+        if (st === 'connected' || st === 'completed') {
+          restartAttempts = 0
+          return
+        }
+        // A re-check is already underway; let it finish.
+        if (st === 'checking') return
+        // Only the initiator sends the restart offer; the peer answers, so a
+        // reconnect never glares. No peer id yet means there's nothing to reach.
+        if (!remoteIdRef.current || selfId! < remoteIdRef.current) return
+        if (restartAttempts >= MAX_RESTART_ATTEMPTS) {
+          if (!cancelled) setPhase('waiting')
+          return
+        }
+        restartAttempts += 1
+        try {
+          if (pc.signalingState === 'stable') {
+            if (!cancelled) setPhase('connecting')
+            const offer = await pc.createOffer({ iceRestart: true })
+            await pc.setLocalDescription(offer)
+            send({ type: 'offer', from: selfId!, sdp: offer })
+          }
+          // Not stable → an offer/answer exchange is already in flight; the
+          // arriving answer re-drives state and the next ice event re-schedules.
+        } catch {
+          // Failed to gather; the next iceConnectionState event retries.
+        }
+      }
+
       pc.ontrack = (e) => {
         e.streams[0]?.getTracks().forEach((t) => {
           if (!inbound.getTracks().includes(t)) inbound.addTrack(t)
@@ -208,12 +271,38 @@ export function useWebRTC(roomId: string | undefined, selfId: string | undefined
         }
       }
 
+      pc.oniceconnectionstatechange = () => {
+        if (cancelled || endedRef.current || remoteLeft) return
+        const st = pc.iceConnectionState
+        if (st === 'connected' || st === 'completed') {
+          clearRestartTimer()
+          restartAttempts = 0
+          if (!cancelled) setPhase('connected')
+        } else if (st === 'disconnected') {
+          if (!restartTimer && restartAttempts < MAX_RESTART_ATTEMPTS) {
+            if (!cancelled) setPhase('connecting')
+            restartTimer = setTimeout(() => void doRestart(), RESTART_GRACE_MS)
+          }
+        } else if (st === 'failed') {
+          clearRestartTimer()
+          void doRestart()
+        }
+      }
+
       pc.onconnectionstatechange = () => {
         if (cancelled || endedRef.current) return
         const s = pc.connectionState
         if (s === 'connected') setPhase('connected')
         else if (s === 'connecting') setPhase('connecting')
-        else if (s === 'failed' || s === 'disconnected') setPhase('waiting')
+        // While an ICE restart is pending, the ice handler owns recovery — don't
+        // paint "waiting" over it. This only clears a stale `connected` badge.
+        else if (
+          (s === 'failed' || s === 'disconnected') &&
+          restartAttempts === 0 &&
+          !restartTimer
+        ) {
+          setPhase('waiting')
+        }
       }
 
       // 3. Signaling channel.
@@ -251,11 +340,16 @@ export function useWebRTC(roomId: string | undefined, selfId: string | undefined
       channel.on('broadcast', { event: 'signal' }, async ({ payload }) => {
         const msg = payload as SignalPayload
         if (!msg || msg.from === selfId) return
+        remoteIdRef.current = msg.from
 
         try {
           switch (msg.type) {
             case 'hello':
-              // Peer just joined — announce back so both learn of each other.
+              // Peer (re)joined — announce back so both learn of each other, and
+              // clear any give-up state so a refreshed peer can reconnect.
+              remoteLeft = false
+              restartAttempts = 0
+              clearRestartTimer()
               send({ type: 'hello', from: selfId! })
               await makeOffer(msg.from)
               break
@@ -291,6 +385,8 @@ export function useWebRTC(roomId: string | undefined, selfId: string | undefined
               break
 
             case 'bye':
+              remoteLeft = true
+              clearRestartTimer()
               inbound.getTracks().forEach((t) => inbound.removeTrack(t))
               if (!cancelled) {
                 setPhase('waiting')
@@ -324,6 +420,8 @@ export function useWebRTC(roomId: string | undefined, selfId: string | undefined
     return () => {
       cancelled = true
       endedRef.current = true
+      clearRestartTimer()
+      remoteIdRef.current = null
       if (channelRef.current) {
         send({ type: 'bye', from: selfId })
         void supabase.removeChannel(channelRef.current)
