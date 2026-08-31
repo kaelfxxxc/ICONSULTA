@@ -3,11 +3,8 @@ import type { FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { cn } from '../lib/utils'
-import {
-  ArrowRightIcon,
-  GraduationCapIcon,
-  MailIcon,
-} from '../components/common/icons'
+import { ArrowRightIcon, MailIcon } from '../components/common/icons'
+import { Brand } from '../components/layout'
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('')
@@ -35,11 +32,8 @@ export default function ForgotPassword() {
   return (
     <div className="bg-dotted flex min-h-full items-center justify-center px-4 py-12">
       <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 shadow-xl">
-        <div className="mb-6 flex items-center gap-2.5">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-navy-900 text-white">
-            <GraduationCapIcon className="h-5 w-5" />
-          </span>
-          <span className="text-lg font-bold text-navy-900">ICONSULTA</span>
+        <div className="mb-6">
+          <Brand />
         </div>
 
         {sent ? (

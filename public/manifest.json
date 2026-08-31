@@ -1,0 +1,14 @@
+{
+  "name": "ICONSULTA",
+  "short_name": "ICONSULTA",
+  "description": "Book, meet, and follow up with MCC faculty — academic consultations, thoughtfully scheduled.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "theme_color": "#0f1e3c",
+  "background_color": "#f1f5f9",
+  "icons": [
+    { "src": "/favicon-192x192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/favicon-512x512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

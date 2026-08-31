@@ -2,15 +2,15 @@ import { NavLink, Link } from 'react-router-dom'
 import type { Role } from '../../types'
 import { APP_NAME, ROLE_LABEL } from '../../utils/constants'
 import { cn } from '../../lib/utils'
-import { Avatar, GraduationCapIcon, PlusIcon } from '../common'
+import { Avatar, LogoMark, PlusIcon } from '../common'
 import { NAV } from './navConfig'
 
 export function Brand({ compact = false }: { compact?: boolean }) {
   return (
     <div className="flex items-center gap-2.5">
-      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-navy-900 text-white shadow-sm">
-        <GraduationCapIcon className="h-5 w-5" />
-      </span>
+      {/* The mark carries its own light ground, so it needs a ring rather than a
+          filled badge to read as a tile against the white sidebar. */}
+      <LogoMark className="h-9 w-9 shadow-sm ring-1 ring-slate-200" />
       {!compact && (
         <span className="text-lg font-bold tracking-tight text-navy-900">
           {APP_NAME}

@@ -11,13 +11,13 @@ import {
   GraduationCapIcon,
   IdCardIcon,
   LockIcon,
+  Logo,
   MailIcon,
   ShieldCheckIcon,
   SparklesIcon,
   VideoIcon,
-} from '../components/common/icons'
+} from '../components/common'
 import type { Department } from '../types'
-import hero from '../assets/hero.png'
 
 type Mode = 'signin' | 'signup'
 type SignupRole = 'student' | 'instructor'
@@ -88,43 +88,51 @@ export default function Login({ variant = 'default' }: { variant?: 'default' | '
   }
 
   return (
-    <div className="flex min-h-full items-stretch bg-slate-100">
+    // items-center, not items-stretch: the card takes its natural height and
+    // centres, instead of being stretched to the viewport and leaving dead bands
+    // above and below the form. min-h-full grows if the card is taller, so
+    // centring never clips it on short screens.
+    <div className="flex min-h-full items-center bg-slate-100">
       <div className="mx-auto flex w-full max-w-6xl flex-col overflow-hidden shadow-xl md:my-8 md:flex-row md:rounded-3xl">
-        {/* Hero panel */}
-        <div className="relative hidden w-full bg-navy-900 md:block md:w-[46%]">
-          <img
-            src={hero}
-            alt=""
-            className="absolute inset-0 h-full w-full object-cover opacity-30"
-          />
-          <div className="absolute inset-0 bg-gradient-to-br from-navy-900/80 via-navy-900/85 to-navy-950/95" />
-          <div className="relative flex h-full flex-col justify-between p-10 text-white">
-            <div className="flex items-center gap-2.5">
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 backdrop-blur">
-                <GraduationCapIcon className="h-6 w-6" />
-              </span>
-              <span className="text-xl font-bold tracking-tight">ICONSULTA</span>
-            </div>
+        {/* Hero panel — gradient + dot texture, no photo to keep in sync.
+            overflow-hidden keeps the glow below from bleeding onto the form panel. */}
+        <div className="relative hidden w-full overflow-hidden bg-gradient-to-br from-navy-800 via-navy-900 to-navy-950 md:block md:w-[46%]">
+          <div className="bg-dotted-light absolute inset-0" />
+          {/* Warm-up glow so the flat navy does not read as dead space */}
+          <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-brand-500/20 blur-3xl" />
+          <div className="relative flex h-full flex-col p-10 text-white">
+            {/* Logo and pitch ride together as one vertically-centred group; the
+                copyright stays pinned to the bottom as a footer. */}
+            <div className="flex flex-1 flex-col justify-center gap-10">
+              {/* The lockup is opaque white-backed artwork, so on navy it sits in a
+                  white plaque instead of bare. Sized by height; width follows, and
+                  the logo's own max-w-full scales it down rather than overflowing.
+                  w-fit shrinks the plaque to the artwork, so mx-auto is what centres
+                  it — the flex column would otherwise leave it at the start edge. */}
+              <div className="mx-auto w-fit max-w-full rounded-2xl bg-white px-4 py-3 shadow-lg">
+                <Logo className="h-10 w-auto lg:h-14" />
+              </div>
 
-            <div>
-              <h1 className="text-3xl font-bold leading-tight">
-                Academic consultations,
-                <br />
-                thoughtfully scheduled.
-              </h1>
-              <p className="mt-3 max-w-sm text-sm text-navy-200">
-                Book, meet, and follow up with MCC faculty — all in one place.
-              </p>
-              <ul className="mt-8 space-y-4">
-                {FEATURES.map((f) => (
-                  <li key={f.text} className="flex items-start gap-3">
-                    <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/10">
-                      <f.icon className="h-4 w-4" />
-                    </span>
-                    <span className="text-sm text-navy-100">{f.text}</span>
-                  </li>
-                ))}
-              </ul>
+              <div>
+                <h1 className="text-3xl font-bold leading-tight">
+                  Academic consultations,
+                  <br />
+                  thoughtfully scheduled.
+                </h1>
+                <p className="mt-3 max-w-sm text-sm text-navy-200">
+                  Book, meet, and follow up with MCC faculty — all in one place.
+                </p>
+                <ul className="mt-8 space-y-4">
+                  {FEATURES.map((f) => (
+                    <li key={f.text} className="flex items-start gap-3">
+                      <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/10">
+                        <f.icon className="h-4 w-4" />
+                      </span>
+                      <span className="text-sm text-navy-100">{f.text}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
 
             <p className="text-xs text-navy-300">
@@ -136,11 +144,9 @@ export default function Login({ variant = 'default' }: { variant?: 'default' | '
         {/* Form panel */}
         <div className="flex w-full items-center justify-center bg-white p-8 md:w-[54%] md:p-12">
           <div className="w-full max-w-sm">
-            <div className="mb-6 flex items-center gap-2.5 md:hidden">
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-navy-900 text-white">
-                <GraduationCapIcon className="h-5 w-5" />
-              </span>
-              <span className="text-lg font-bold text-navy-900">ICONSULTA</span>
+            {/* White form panel, so the lockup's own white ground needs no plaque */}
+            <div className="mb-6 md:hidden">
+              <Logo className="h-9 w-auto" />
             </div>
 
             <h2 className="text-2xl font-bold tracking-tight text-slate-900">
