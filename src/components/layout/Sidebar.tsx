@@ -1,16 +1,16 @@
 import { NavLink, Link } from 'react-router-dom'
 import type { Role } from '../../types'
-import { APP_NAME, ROLE_LABEL } from '../../utils/constants'
+import { ROLE_LABEL } from '../../utils/constants'
 import { cn } from '../../lib/utils'
 import { Avatar, LogoMark, PlusIcon } from '../common'
 import { NAV } from './navConfig'
 
-export function Brand({ compact = false }: { compact?: boolean }) {
+export function Brand({ compact: _compact = false }: { compact?: boolean }) {
   return (
     <div className="flex items-center gap-2.5">
       {/* The mark carries its own light ground, so it needs a ring rather than a
           filled badge to read as a tile against the white sidebar. */}
-      <LogoMark className="h-auto w-auto shadow-sm ring-1 ring-slate-200" />
+      <LogoMark className="h-auto w-auto py-3" />
     </div>
   )
 }
@@ -56,7 +56,7 @@ export function Sidebar({
         </div>
       )}
 
-      <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-2">
+      <nav className="flex-1 space-y-1 overflow-y-auto px-5 py-7 border-y border-[#edf0f5]">
         {nav.items.map((item) => {
           const Icon = item.icon
           return (
@@ -67,21 +67,28 @@ export function Sidebar({
               onClick={onNavigate}
               className={({ isActive }) =>
                 cn(
-                  'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition',
+                  'relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition',
                   isActive
-                    ? 'bg-navy-900 text-white shadow-sm'
-                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900',
+                    ? 'bg-navy-50 font-semibold text-navy-900'
+                    : 'font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-800',
                 )
               }
             >
-              <Icon className="h-[18px] w-[18px]" />
-              {item.label}
+              {({ isActive }) => (
+                <>
+                  <Icon className="h-[18px] w-[18px]" />
+                  {item.label}
+                  {isActive && (
+                    <span className="absolute right-1.5 top-1/2 h-5 w-1 -translate-y-1/2 rounded-full bg-navy-900" />
+                  )}
+                </>
+              )}
             </NavLink>
           )
         })}
       </nav>
 
-      <div className="p-3">
+      <div className="p-5">
         <Link
           to={nav.cta.to}
           onClick={onNavigate}

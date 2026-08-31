@@ -31,9 +31,8 @@
   --color-brand-900: #33357f;
 
   /* Typography — DM Sans for body/UI, Manrope for display headings. */
-  --font-sans: 'DM Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI',
-    Roboto, Helvetica, Arial, sans-serif;
-  --font-display: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'DM Sans', ui-sans-serif, system-ui;
+  --font-display: 'Manrope', sans-serif;
 }
 
 html,
