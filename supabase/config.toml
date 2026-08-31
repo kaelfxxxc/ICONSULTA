@@ -17,9 +17,14 @@ extra_search_path = ["public"]
 # ---- Auth ---------------------------------------------------------------------
 # Email confirmation is intentionally OFF: sign-up creates a usable account
 # immediately and the app routes the new user to the Sign In screen to log in.
-# NOTE: this block only governs the LOCAL stack (`supabase start`). For the
-# hosted project, turn the same toggle off in the dashboard:
-#   Authentication -> Sign In / Providers -> Email -> "Confirm email" = off.
+# NOTE: this block only governs the LOCAL stack (`supabase start`). The hosted
+# project (llbxwmzruzwboceliftc) now has the matching toggle off as well:
+#   Authentication -> Sign In / Providers -> Email -> "Confirm email" = off
+#   (Management API field: mailer_autoconfirm = true)
+# Leaving it ON there sends a confirmation mail per sign-up through Supabase's
+# built-in mailer, which is capped at 2 messages/hour — every sign-up past the
+# second failed with HTTP 429 "email rate limit exceeded". Turn confirmation
+# back on only together with a real SMTP provider.
 [auth]
 enable_signup = true
 

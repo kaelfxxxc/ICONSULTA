@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link } from 'react-router-dom'
-import { supabase } from '../lib/supabase'
+import { sendPasswordReset } from '../services/auth.service'
 import { cn } from '../lib/utils'
 import { ArrowRightIcon, MailIcon } from '../components/common/icons'
 import { Brand } from '../components/layout'
@@ -17,10 +17,7 @@ export default function ForgotPassword() {
     setError(null)
     setLoading(true)
     try {
-      const { error: err } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/login`,
-      })
-      if (err) throw err
+      await sendPasswordReset(email, `${window.location.origin}/login`)
       setSent(true)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not send reset link.')

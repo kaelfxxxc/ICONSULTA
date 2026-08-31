@@ -131,6 +131,7 @@ export interface AnalyticsMetric {
   instructor_activity_count: number
   avg_session_duration: number | null
   created_at: string
+  updated_at: string
 }
 
 // Convenience joins used by the UI ------------------------------------------

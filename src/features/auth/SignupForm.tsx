@@ -1,10 +1,9 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { signUp } from '../../services/auth.service'
 import { Button, Input } from '../../components/common'
 import { cn } from '../../lib/utils'
-import { DEPARTMENTS, ROLE_HOME } from '../../utils/constants'
+import { DEPARTMENTS } from '../../utils/constants'
 import type { Department } from '../../types'
 
 type SignupRole = 'student' | 'instructor'
@@ -18,7 +17,6 @@ export function SignupForm() {
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const navigate = useNavigate()
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -26,21 +24,18 @@ export function SignupForm() {
     setNotice(null)
     setLoading(true)
     try {
-      const { session } = await signUp({
+      await signUp({
         email,
         password,
         name,
         role,
         department: role === 'instructor' ? department : undefined,
       })
-      if (session) {
-        navigate(ROLE_HOME[role], { replace: true })
-      } else {
-        // Email confirmation is enabled on the project — no session yet.
-        setNotice(
-          'Account created. If email confirmation is on, confirm via the link we sent, then sign in.',
-        )
-      }
+      // signUp runs on a session-less client on purpose, so the browser is
+      // never logged in here — routing to a dashboard would just bounce off
+      // ProtectedRoute. Send them to Sign In with the credentials they chose.
+      setPassword('')
+      setNotice('Account created. Please sign in with your credentials.')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Sign up failed')
     } finally {

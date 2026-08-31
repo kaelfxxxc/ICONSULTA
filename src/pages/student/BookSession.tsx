@@ -67,7 +67,15 @@ export default function BookSession() {
 
   async function handleBook() {
     setError(null)
-    if (!studentId || !instructorId || !date || !time || !reason.trim()) {
+    if (!studentId) {
+      // No student_profiles row resolved — booking cannot be attributed, and
+      // the generic "choose a slot" message would send the user in circles.
+      setError(
+        'Your student profile is still loading. Refresh the page, and if this keeps happening contact an administrator.',
+      )
+      return
+    }
+    if (!instructorId || !date || !time || !reason.trim()) {
       setError('Please choose a slot and add a short reason.')
       return
     }
