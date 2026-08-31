@@ -94,7 +94,10 @@ export function AppointmentTrend({ metrics }: { metrics: AnalyticsMetric[] }) {
             axisLine={false}
             allowDecimals={false}
           />
-          <Tooltip content={<ChartTooltip />} labelFormatter={shortDate} />
+          <Tooltip
+            content={<ChartTooltip />}
+            labelFormatter={(label) => shortDate(String(label))}
+          />
           <Legend wrapperStyle={{ fontSize: 12, paddingTop: 6 }} />
           <Area
             type="monotone"

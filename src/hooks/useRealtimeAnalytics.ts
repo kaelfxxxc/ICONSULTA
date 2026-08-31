@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import type { RealtimeChannelState } from '@supabase/supabase-js'
 import { useAnalytics } from './useAnalytics'
 import { qk } from './queryKeys'
 import { subscribeAdminAnalytics } from '../services/analytics.service'
 
-export type LiveStatus = RealtimeChannelState
+/** Channel connection states surfaced by the realtime subscribe callback. */
+export type LiveStatus = 'SUBSCRIBED' | 'CHANNEL_ERROR' | 'TIMED_OUT' | 'CLOSED'
 
 /** A new appointment request arriving over realtime. */
 export interface LiveEvent {

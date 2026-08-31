@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase'
-import type { RealtimeChannel, RealtimeChannelState } from '@supabase/supabase-js'
+import type { REALTIME_SUBSCRIBE_STATES, RealtimeChannel } from '@supabase/supabase-js'
 import type {
   AnalyticsMetric,
   Appointment,
@@ -169,7 +169,7 @@ export async function updateUserRole(id: string, role: Role): Promise<void> {
 export function subscribeAdminAnalytics(
   onMetricsChange: () => void,
   onAppointmentInsert: (appointment: Appointment) => void,
-  onStatus?: (status: RealtimeChannelState) => void,
+  onStatus?: (status: REALTIME_SUBSCRIBE_STATES) => void,
 ): () => void {
   const channel: RealtimeChannel = supabase
     .channel('admin-live-analytics')
