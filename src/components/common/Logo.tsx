@@ -1,5 +1,5 @@
 import { cn } from '../../lib/utils'
-import mark from '../../assets/images/logo-mark.png'
+import mark from '../../assets/images/ICONSULTA-horizontal-logo.png'
 import lockup from '../../assets/images/ICONSULTA-horizontal-logo.png'
 
 // Both logos are opaque artwork with their own white ground — 0% transparent
@@ -30,9 +30,9 @@ export function LogoMark({
     <img
       src={mark}
       alt={alt}
-      width={128}
-      height={128}
-      className={cn('shrink-0 rounded-xl object-contain', className)}
+      width={500}
+      height={100}
+      className={cn('max-w-full object-contain', className)}
     />
   )
 }

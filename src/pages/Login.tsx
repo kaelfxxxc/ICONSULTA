@@ -104,38 +104,20 @@ export default function Login({ variant = 'default' }: { variant?: 'default' | '
   return (
     <div className="flex min-h-full flex-col bg-slate-50 text-slate-900">
       {/* Top bar spans the full width above both columns. */}
-      <header className="flex items-center justify-between border-b border-slate-200/70 px-6 py-4 lg:px-10">
-        <div className="flex items-center gap-2 text-sm font-medium text-slate-600">
-          <BookOpenIcon className="h-4 w-4 text-navy-900" />
-          Academic consultation portal
-        </div>
-        <p className="hidden text-xs font-medium uppercase tracking-[0.14em] text-slate-400 sm:block">
-          MCC campus access · Secure workspace
-        </p>
-      </header>
-
-      <main className="mx-auto grid w-full max-w-6xl flex-1 gap-10 px-6 py-10 lg:grid-cols-2 lg:gap-16 lg:px-10 lg:py-14">
+      <main className="mx-auto grid w-full max-w-6xl flex-1 gap-10 px-3 py-1 lg:grid-cols-2 lg:gap-16 lg:px-10 lg:py-5">
         {/* Editorial column — desktop only; the card carries the brand on mobile. */}
         <section className="animate-rise hidden flex-col justify-between lg:flex">
           <div>
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                Make your next question count
-              </span>
-              <span className="text-xs font-medium text-slate-300">01 / 01</span>
-            </div>
 
             <Logo className="mt-8 h-11 w-auto" />
-
             <h1 className="mt-10 text-5xl font-extrabold leading-[1.04] tracking-tight xl:text-6xl">
-              <span className="text-navy-900">Better questions</span>
+              <span className="text-navy-900">Academic consultations,</span>
               <br />
-              <span className="text-slate-400">start with time.</span>
+              <span className="text-slate-400">thoughtfully scheduled.</span>
             </h1>
 
             <p className="mt-6 max-w-md text-[15px] leading-relaxed text-slate-500">
-              Book a thoughtful conversation with MCC faculty, keep the context,
-              and move your learning forward with confidence.
+              Book, meet, and follow up with MCC faculty — all in one place.
             </p>
           </div>
 
