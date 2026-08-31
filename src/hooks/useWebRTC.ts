@@ -13,6 +13,11 @@ import { supabase } from '../lib/supabase'
  * `have-local-offer` and neither can apply the other's). We break the tie with
  * the caller's own id — the lexicographically larger id is the "initiator" and
  * is the only side that creates the offer. Both sides answer.
+ *
+ * Handshake: a joiner broadcasts `hello`; whoever is already in the room replies
+ * once with `hello-ack`. The reply is a *different* message type on purpose — two
+ * sides answering `hello` with `hello` greet each other forever, and each lap
+ * used to kick off another offer, so the connection never settled.
  */
 
 type Phase =
@@ -46,6 +51,7 @@ type SignalPayload =
   | { type: 'answer'; from: string; sdp: RTCSessionDescriptionInit }
   | { type: 'ice'; from: string; candidate: RTCIceCandidateInit }
   | { type: 'hello'; from: string }
+  | { type: 'hello-ack'; from: string }
   | { type: 'bye'; from: string }
 
 function describeMediaError(err: unknown): MediaError {
@@ -101,6 +107,10 @@ export function useWebRTC(roomId: string | undefined, selfId: string | undefined
   const [sharing, setSharing] = useState(false)
   const [remoteMuted, setRemoteMuted] = useState(false)
   const [remoteCamOff, setRemoteCamOff] = useState(false)
+  // Whether the peer's video is actually arriving. The remote tile keys off this
+  // rather than `phase`, so a renegotiation or a brief ICE hiccup can't blank a
+  // feed that is still playing.
+  const [remoteVideoLive, setRemoteVideoLive] = useState(false)
 
   const localStream = useRef<MediaStream | null>(null)
   const remoteStream = useRef<MediaStream | null>(null)
@@ -121,11 +131,11 @@ export function useWebRTC(roomId: string | undefined, selfId: string | undefined
   /** Attach a stream to a <video>, tolerating a ref that mounts later. */
   const bind = useCallback(
     (el: HTMLVideoElement | null, stream: MediaStream | null) => {
-      if (el && stream && el.srcObject !== stream) {
-        el.srcObject = stream
-        // Autoplay can reject until a gesture; the UI still shows the tile.
-        void el.play().catch(() => {})
-      }
+      if (!el || !stream) return
+      if (el.srcObject !== stream) el.srcObject = stream
+      // Autoplay can reject until a gesture; the UI still shows the tile. Retry
+      // on every bind so an element left paused by that rejection recovers.
+      if (el.paused) void el.play().catch(() => {})
     },
     [],
   )
@@ -160,6 +170,7 @@ export function useWebRTC(roomId: string | undefined, selfId: string | undefined
 
     let cancelled = false
     endedRef.current = false
+    makingOffer.current = false
 
     // Reconnection state — lives here so both start() and the effect's cleanup
     // can see it. A dropped peer connection is usually transient: we tolerate a
@@ -217,6 +228,13 @@ export function useWebRTC(roomId: string | undefined, selfId: string | undefined
       const inbound = new MediaStream()
       remoteStream.current = inbound
 
+      const syncRemoteVideo = () => {
+        if (cancelled) return
+        setRemoteVideoLive(
+          inbound.getVideoTracks().some((t) => t.readyState === 'live'),
+        )
+      }
+
       // ---- Reconnection (ICE restart) ----------------------------------------
       // Constants/state above (effect scope) — the initiator sends a fresh
       // `iceRestart: true` offer over signaling after the `disconnected` grace
@@ -259,9 +277,13 @@ export function useWebRTC(roomId: string | undefined, selfId: string | undefined
 
       pc.ontrack = (e) => {
         e.streams[0]?.getTracks().forEach((t) => {
-          if (!inbound.getTracks().includes(t)) inbound.addTrack(t)
+          if (inbound.getTracks().includes(t)) return
+          inbound.addTrack(t)
+          // A track the peer stops sending must clear the tile again.
+          if (t.kind === 'video') t.addEventListener('ended', syncRemoteVideo)
         })
         bind(remoteVideoRef.current, inbound)
+        syncRemoteVideo()
         if (!cancelled) setPhase('connected')
       }
 
@@ -312,17 +334,51 @@ export function useWebRTC(roomId: string | undefined, selfId: string | undefined
       channelRef.current = channel
 
       // Only the larger id initiates, so we never both offer at once.
-      const makeOffer = async (peerId: string) => {
+      //
+      // Guarded so a repeated greeting cannot stack offers. Without these
+      // checks every `hello` produced another createOffer/setLocalDescription,
+      // so answers came back against an already-replaced local description and
+      // were dropped, and the constant renegotiation kept resetting `phase` to
+      // "connecting" — audio flowed but the video tiles stayed behind the
+      // "Connecting…" placeholder forever.
+      //
+      // `fresh` marks a genuine (re)join: the peer has a brand-new
+      // RTCPeerConnection, so an established call must be renegotiated with new
+      // ICE credentials rather than left on its dead candidate pairs.
+      const makeOffer = async (peerId: string, fresh = false) => {
         if (selfId! < peerId) return
+        if (makingOffer.current) return
+        if (pc.signalingState !== 'stable') return
+        const live =
+          pc.iceConnectionState === 'connected' ||
+          pc.iceConnectionState === 'completed'
+        if (live && !fresh) return
         try {
           makingOffer.current = true
-          const offer = await pc.createOffer()
+          const offer = await pc.createOffer(live ? { iceRestart: true } : {})
           await pc.setLocalDescription(offer)
           send({ type: 'offer', from: selfId!, sdp: offer })
-          if (!cancelled) setPhase('connecting')
+          if (!cancelled) {
+            setPhase((p) => (p === 'connected' ? p : 'connecting'))
+          }
+        } catch {
+          // Gathering failed; the peer's next greeting retries.
         } finally {
           makingOffer.current = false
         }
+      }
+
+      /** Tell the peer our current mic/camera state so their badges start right. */
+      const announceState = () => {
+        void channel.send({
+          type: 'broadcast',
+          event: 'state',
+          payload: {
+            from: selfId!,
+            micOn: stream.getAudioTracks().some((t) => t.enabled),
+            camOn: stream.getVideoTracks().some((t) => t.enabled),
+          },
+        })
       }
 
       const drainIce = async () => {
@@ -345,12 +401,24 @@ export function useWebRTC(roomId: string | undefined, selfId: string | undefined
         try {
           switch (msg.type) {
             case 'hello':
-              // Peer (re)joined — announce back so both learn of each other, and
-              // clear any give-up state so a refreshed peer can reconnect.
+              // Peer (re)joined with a fresh peer connection. Reply once with an
+              // *ack* — answering `hello` with `hello` made both sides greet
+              // each other endlessly. Also clear any give-up state so a
+              // refreshed peer can reconnect.
               remoteLeft = false
               restartAttempts = 0
               clearRestartTimer()
-              send({ type: 'hello', from: selfId! })
+              send({ type: 'hello-ack', from: selfId! })
+              announceState()
+              await makeOffer(msg.from, true)
+              break
+
+            case 'hello-ack':
+              // Our greeting was heard, so the peer was already in the room.
+              // Terminal message — never replied to, which is what bounds the
+              // handshake at two hops.
+              remoteLeft = false
+              announceState()
               await makeOffer(msg.from)
               break
 
@@ -365,7 +433,11 @@ export function useWebRTC(roomId: string | undefined, selfId: string | undefined
               const answer = await pc.createAnswer()
               await pc.setLocalDescription(answer)
               send({ type: 'answer', from: selfId!, sdp: answer })
-              if (!cancelled) setPhase('connecting')
+              // Don't downgrade a call that is already up — renegotiating is not
+              // a reason to hide a working feed.
+              if (!cancelled) {
+                setPhase((p) => (p === 'connected' ? p : 'connecting'))
+              }
               break
             }
 
@@ -390,6 +462,7 @@ export function useWebRTC(roomId: string | undefined, selfId: string | undefined
               inbound.getTracks().forEach((t) => inbound.removeTrack(t))
               if (!cancelled) {
                 setPhase('waiting')
+                setRemoteVideoLive(false)
                 setRemoteCamOff(false)
                 setRemoteMuted(false)
               }
@@ -422,6 +495,8 @@ export function useWebRTC(roomId: string | undefined, selfId: string | undefined
       endedRef.current = true
       clearRestartTimer()
       remoteIdRef.current = null
+      makingOffer.current = false
+      setRemoteVideoLive(false)
       if (channelRef.current) {
         send({ type: 'bye', from: selfId })
         void supabase.removeChannel(channelRef.current)
@@ -522,6 +597,7 @@ export function useWebRTC(roomId: string | undefined, selfId: string | undefined
     localStream.current?.getTracks().forEach((t) => t.stop())
     if (localVideoRef.current) localVideoRef.current.srcObject = null
     if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null
+    setRemoteVideoLive(false)
     setPhase('ended')
   }, [selfId, send])
 
@@ -533,6 +609,7 @@ export function useWebRTC(roomId: string | undefined, selfId: string | undefined
     sharing,
     remoteMuted,
     remoteCamOff,
+    remoteVideoLive,
     setLocalVideoEl,
     setRemoteVideoEl,
     toggleMic,

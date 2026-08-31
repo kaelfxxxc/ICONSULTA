@@ -56,6 +56,7 @@ export default function VideoSession() {
     sharing,
     remoteMuted,
     remoteCamOff,
+    remoteVideoLive,
     setLocalVideoEl,
     setRemoteVideoEl,
     toggleMic,
@@ -95,9 +96,13 @@ export default function VideoSession() {
       ? 'Starting camera…'
       : phase === 'waiting'
         ? `Waiting for ${counterpartName} to join…`
-        : phase === 'connecting'
+        : phase === 'connecting' && !remoteVideoLive
           ? 'Connecting…'
-          : null
+          : remoteCamOff
+            ? `${counterpartName}'s camera is off`
+            : !remoteVideoLive
+              ? `Waiting for ${counterpartName}'s camera…`
+              : null
 
   return (
     <div className="flex h-full flex-col bg-navy-950 text-white">
@@ -158,7 +163,9 @@ export default function VideoSession() {
               muted={remoteMuted}
               camOff={remoteCamOff}
               placeholder={ended ? 'Session ended' : connectionLabel}
-              showPlaceholder={ended || phase !== 'connected'}
+              // Keyed on the peer's video actually arriving, not on `phase`: a
+              // renegotiation or brief ICE hiccup must not hide a live feed.
+              showPlaceholder={ended || !remoteVideoLive || remoteCamOff}
             />
             <VideoTile
               name={`${selfName} (You)`}
