@@ -76,8 +76,13 @@ export function Sidebar({
             >
               {({ isActive }) => (
                 <>
-                  <Icon className="h-[18px] w-[18px]" />
-                  {item.label}
+                  <Icon 
+                    className="h-[18px] w-[18px]" 
+                    strokeWidth={isActive ? 2.5 : 1.8} 
+                  />
+                  <span className={isActive ? "font-semibold" : "font-[750]"}>
+                    {item.label}
+                  </span>
                   {isActive && (
                     <span className="absolute right-1.5 top-1/2 h-5 w-1 -translate-y-1/2 rounded-full bg-navy-900" />
                   )}

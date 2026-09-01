@@ -46,6 +46,7 @@ body {
   background: #f1f5f9; /* slate-100 — the app canvas */
   color: #0f172a;
   font-family: var(--font-sans);
+  font-weight: 750;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
