@@ -84,11 +84,7 @@ export default function Login({ variant = 'default' }: { variant?: 'default' | '
     }
   }
 
-  const eyebrow = isAdminPortal
-    ? 'Secure administrator access'
-    : mode === 'signin'
-      ? 'Continue to your workspace'
-      : 'Join ICONSULTA'
+
   const heading = isAdminPortal
     ? 'Administrator sign in.'
     : mode === 'signin'
@@ -113,7 +109,7 @@ export default function Login({ variant = 'default' }: { variant?: 'default' | '
             <h1 className="mt-10 text-5xl font-extrabold leading-[1.04] tracking-tight xl:text-6xl">
               <span className="text-navy-900">Academic consultations,</span>
               <br />
-              <span className="text-slate-400">thoughtfully scheduled.</span>
+              <span className="text-navy-900">thoughtfully scheduled.</span>
             </h1>
 
             <p className="mt-6 max-w-md text-[15px] leading-relaxed text-slate-500">
@@ -151,10 +147,6 @@ export default function Login({ variant = 'default' }: { variant?: 'default' | '
             <div className="animate-rise relative rounded-[28px] rounded-tl-md border border-slate-200/80 bg-white p-6 shadow-[0_24px_70px_-28px_rgba(15,30,60,0.35)] sm:p-8">
               {/* Small navy accent tab riding the top-left edge. */}
               <span className="absolute left-7 top-0 h-1 w-12 -translate-y-1/2 rounded-full bg-navy-900" />
-
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                {eyebrow}
-              </p>
               <h2 className="mt-2 text-3xl font-bold tracking-tight text-slate-900">
                 {heading}
               </h2>
