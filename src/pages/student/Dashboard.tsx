@@ -190,9 +190,9 @@ export default function StudentDashboard() {
         <div className="space-y-6">
           {/* Quick action navy card */}
           <div className="rounded-2xl bg-navy-900 p-6 text-white shadow-sm">
-            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/10">
+            {/*<span className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/10">
               <SparklesIcon className="h-6 w-6" />
-            </span>
+            </span>*/}
             <h3 className="mt-4 text-lg font-bold">Need help with a course?</h3>
             <p className="mt-1 text-sm text-navy-200">
               Book a one-on-one video consultation with your instructor in a few

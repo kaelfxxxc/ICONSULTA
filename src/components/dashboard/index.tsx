@@ -2,7 +2,7 @@ import type { ComponentType, ReactNode, SVGProps } from 'react'
 import { cn, formatDateTime, statusLabel, statusTone } from '../../lib/utils'
 import { Badge } from '../common'
 import { ClockIcon, SparklesIcon } from '../common/icons'
-import type { AppointmentWithParties } from '../../types'
+import type { AppointmentStatus, AppointmentWithParties } from '../../types'
 
 type IconType = ComponentType<SVGProps<SVGSVGElement>>
 
@@ -23,6 +23,25 @@ export function DateBlock({ iso }: { iso: string | null }) {
   )
 }
 
+/**
+ * Left rule + tint for an appointment row. Always a 4px left border; the colour
+ * (and, when rejected, the wash) follows the status.
+ */
+function appointmentAccent(status: AppointmentStatus) {
+  const color =
+    status === 'rejected'
+      ? '#d8797e'
+      : status === 'completed'
+        ? '#5da7c6'
+        : '#dbe2ee'
+  return {
+    borderLeft: `4px solid ${color}`,
+    ...(status === 'rejected'
+      ? { background: 'linear-gradient(100deg, #fffafa, #fff)' }
+      : null),
+  }
+}
+
 /** A single appointment row: date chip, title + status, counterpart, actions. */
 export function AppointmentItem({
   appointment,
@@ -36,7 +55,10 @@ export function AppointmentItem({
   actions?: ReactNode
 }) {
   return (
-    <div className="flex items-center gap-4 rounded-xl border border-slate-200 bg-white p-4 transition hover:border-slate-300 hover:shadow-sm">
+    <div
+      className="flex items-center gap-4 rounded-xl border border-slate-200 bg-white p-4 transition hover:border-slate-300 hover:shadow-sm"
+      style={appointmentAccent(appointment.status)}
+    >
       <DateBlock iso={appointment.scheduled_at} />
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">

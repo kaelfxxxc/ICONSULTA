@@ -61,7 +61,7 @@ export default function StudentAppointments() {
         </Link>
       </PageHeader>
 
-      <div className="mb-5 flex flex-wrap gap-2">
+      <div className="mb-5 flex w-max flex-wrap gap-2 p-2 border border-[#e5ebf3] rounded-lg bg-slate-100">
         {TABS.map((t) => {
           const count = (appts ?? []).filter((a) => t.match(a.status)).length
           return (
@@ -72,7 +72,7 @@ export default function StudentAppointments() {
                 'rounded-lg px-3.5 py-2 text-sm font-medium transition',
                 tab === t.key
                   ? 'bg-navy-900 text-white'
-                  : 'bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50',
+                  : 'bg-slate-100 text-slate-600  hover:bg-slate-50 hover:ring-slate-200  hover:ring-1',
               )}
             >
               {t.label}
@@ -80,8 +80,8 @@ export default function StudentAppointments() {
                 className={cn(
                   'ml-2 rounded-full px-1.5 py-0.5 text-xs',
                   tab === t.key
-                    ? 'bg-white/20'
-                    : 'bg-slate-100 text-slate-500',
+                    ? 'bg-slate-100 text-slate-900'
+                    : 'bg-slate-100 text-slate-900',
                 )}
               >
                 {count}
