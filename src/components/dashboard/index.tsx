@@ -56,7 +56,7 @@ export function AppointmentItem({
 }) {
   return (
     <div
-      className="flex items-center gap-4 rounded-xl border border-slate-200 bg-white p-4 transition hover:border-slate-300 hover:shadow-sm"
+      className="flex items-center gap-4 rounded-xl border border-slate-200 bg-white p-4 transition hover:-translate-y-px hover:border-[#cbd6e8] hover:shadow-[0_6px_14px_rgba(32,53,87,0.05)]"
       style={appointmentAccent(appointment.status)}
     >
       <DateBlock iso={appointment.scheduled_at} />

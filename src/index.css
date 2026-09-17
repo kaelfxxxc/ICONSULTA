@@ -58,7 +58,19 @@ h3,
 h4 {
   font-family: var(--font-display);
 }
-
+.bg-card{
+  background: linear-gradient(130deg, #102348 0%, #162d5a 70%, #1b3b72 100%);
+}
+.login-shadow{
+  box-shadow: 16px 18px 0 rgba(16, 35, 72, 0.035), 0 16px 42px rgba(31, 49, 79, 0.06);
+}
+/* Phone weight for the login card. Sits after .login-shadow so it wins wherever
+   both classes are present; 40rem matches Tailwind's `sm` cutoff. */
+@media (width < 40rem) {
+  .mobile-shadow{
+    box-shadow: 9px 10px 0 rgba(16, 35, 72, 0.035), 0 15px 32px rgba(31, 49, 79, 0.06);
+  }
+}
 /* Subtle dotted texture used behind the auth screen. */
 .bg-dotted {
   background-image: radial-gradient(rgba(15, 30, 60, 0.06) 1px, transparent 1px);

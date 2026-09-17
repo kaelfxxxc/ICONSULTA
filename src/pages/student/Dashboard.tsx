@@ -158,7 +158,7 @@ export default function StudentDashboard() {
                 <Link
                   key={i.id}
                   to={`/student/appointments/new?instructor=${i.id}`}
-                  className="flex items-center gap-3 rounded-xl border border-slate-200 p-3 transition hover:border-brand-300 hover:bg-brand-50/40"
+                  className="flex items-center gap-3 rounded-xl border border-slate-200 p-3 transition hover:-translate-y-px hover:border-[#cbd6e8] hover:shadow-[0_6px_14px_rgba(32,53,87,0.05)]"
                 >
                   <Avatar
                     name={i.user?.name}
@@ -189,7 +189,7 @@ export default function StudentDashboard() {
         {/* Aside */}
         <div className="space-y-6">
           {/* Quick action navy card */}
-          <div className="rounded-2xl bg-navy-900 p-6 text-white shadow-sm">
+          <div className="rounded-2xl bg-card p-6 text-white shadow-sm">
             {/*<span className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/10">
               <SparklesIcon className="h-6 w-6" />
             </span>*/}

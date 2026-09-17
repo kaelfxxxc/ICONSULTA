@@ -140,13 +140,15 @@ export default function Login({ variant = 'default' }: { variant?: 'default' | '
         {/* Login card */}
         <section className="flex items-center justify-center">
           <div className="w-full max-w-md">
-            <div className="mb-6 lg:hidden">
-              <Logo className="h-9 w-auto" />
-            </div>
-
-            <div className="animate-rise relative rounded-[28px] rounded-tl-md border border-slate-200/80 bg-white p-6 shadow-[0_24px_70px_-28px_rgba(15,30,60,0.35)] sm:p-8">
+            <div className="animate-rise relative rounded-[28px] rounded-tl-md border border-slate-200/80 bg-white p-6 login-shadow mobile-shadow sm:p-8">
               {/* Small navy accent tab riding the top-left edge. */}
               <span className="absolute left-7 top-0 h-1 w-12 -translate-y-1/2 rounded-full bg-navy-900" />
+
+              {/* Brand mark rides inside the card on mobile; the editorial column brands the desktop layout. */}
+              <div className="mb-6 flex lg:hidden">
+                <Logo className="h-9 w-auto" />
+              </div>
+
               <h2 className="mt-2 text-3xl font-bold tracking-tight text-slate-900">
                 {heading}
               </h2>
@@ -186,7 +188,7 @@ export default function Login({ variant = 'default' }: { variant?: 'default' | '
 
               {/* Role cards — the picker drives sign-up; sign-in reads role from the DB. */}
               {!isAdminPortal && (
-                <div className="mt-5 grid grid-cols-2 gap-3">
+                <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
                   {(
                     [
                       {
