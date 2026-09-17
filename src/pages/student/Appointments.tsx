@@ -61,7 +61,7 @@ export default function StudentAppointments() {
         </Link>
       </PageHeader>
 
-      <div className="mb-5 flex w-max flex-wrap gap-2 p-2 border border-[#e5ebf3] rounded-lg bg-slate-100">
+      <div className="mb-5 flex w-full gap-2 overflow-x-auto p-2 border border-[#e5ebf3] rounded-lg bg-[#eaf0f8] sm:w-max sm:flex-wrap sm:overflow-visible">
         {TABS.map((t) => {
           const count = (appts ?? []).filter((a) => t.match(a.status)).length
           return (
@@ -69,21 +69,14 @@ export default function StudentAppointments() {
               key={t.key}
               onClick={() => setTab(t.key)}
               className={cn(
-                'rounded-lg px-3.5 py-2 text-sm font-medium transition',
+                'shrink-0 rounded-lg px-3.5 py-2 text-sm font-medium transition',
                 tab === t.key
                   ? 'bg-navy-900 text-white'
-                  : 'bg-slate-100 text-slate-600  hover:bg-slate-50 hover:ring-slate-200  hover:ring-1',
+                  : 'bg-slate-50 text-slate-600  hover:bg-slate-50 hover:ring-slate-400  hover:ring-1  hover:text-slate-900',
               )}
             >
               {t.label}
-              <span
-                className={cn(
-                  'ml-2 rounded-full px-1.5 py-0.5 text-xs',
-                  tab === t.key
-                    ? 'bg-slate-100 text-slate-900'
-                    : 'bg-slate-100 text-slate-900',
-                )}
-              >
+              <span className="ml-2 rounded-full bg-slate-100 px-1.5 py-0.5 text-xs text-slate-900">
                 {count}
               </span>
             </button>

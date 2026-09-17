@@ -6,7 +6,10 @@ import type { AppointmentStatus, AppointmentWithParties } from '../../types'
 
 type IconType = ComponentType<SVGProps<SVGSVGElement>>
 
-/** Navy month/day chip shown to the left of an appointment. */
+/**
+ * Navy month/day chip shown to the left of an appointment. Desktop only — on
+ * phones the row is tight and the full date already reads in the text beside it.
+ */
 export function DateBlock({ iso }: { iso: string | null }) {
   const d = iso ? new Date(iso) : null
   const month = d
@@ -14,7 +17,7 @@ export function DateBlock({ iso }: { iso: string | null }) {
     : '—'
   const day = d ? d.getDate() : '—'
   return (
-    <div className="flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-xl bg-navy-900 text-white">
+    <div className="hidden h-14 w-14 shrink-0 flex-col items-center justify-center rounded-xl bg-navy-900 text-white sm:flex">
       <span className="text-[10px] font-semibold tracking-wide text-navy-200">
         {month}
       </span>
@@ -24,21 +27,24 @@ export function DateBlock({ iso }: { iso: string | null }) {
 }
 
 /**
- * Left rule + tint for an appointment row. Always a 4px left border; the colour
- * (and, when rejected, the wash) follows the status.
+ * Left rule + tint per status. Always a 4px left border; the colour — and, for
+ * the statuses that carry one, the background wash — follows the status.
  */
+const ACCENT: Partial<Record<AppointmentStatus, { color: string; wash?: string }>> =
+  {
+    pending: { color: '#d89b3e', wash: 'linear-gradient(100deg, #fffdf7, #fff)' },
+    rejected: {
+      color: '#d8797e',
+      wash: 'linear-gradient(100deg, #fffafa, #fff)',
+    },
+    completed: { color: '#5da7c6' },
+  }
+
 function appointmentAccent(status: AppointmentStatus) {
-  const color =
-    status === 'rejected'
-      ? '#d8797e'
-      : status === 'completed'
-        ? '#5da7c6'
-        : '#dbe2ee'
+  const { color = '#dbe2ee', wash } = ACCENT[status] ?? {}
   return {
     borderLeft: `4px solid ${color}`,
-    ...(status === 'rejected'
-      ? { background: 'linear-gradient(100deg, #fffafa, #fff)' }
-      : null),
+    ...(wash ? { background: wash } : null),
   }
 }
 
@@ -56,7 +62,7 @@ export function AppointmentItem({
 }) {
   return (
     <div
-      className="flex items-center gap-4 rounded-xl border border-slate-200 bg-white p-4 transition hover:-translate-y-px hover:border-[#cbd6e8] hover:shadow-[0_6px_14px_rgba(32,53,87,0.05)]"
+      className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 transition hover:-translate-y-px hover:border-[#cbd6e8] hover:shadow-[0_6px_14px_rgba(32,53,87,0.05)] sm:flex-row sm:items-center sm:gap-4"
       style={appointmentAccent(appointment.status)}
     >
       <DateBlock iso={appointment.scheduled_at} />
@@ -79,7 +85,9 @@ export function AppointmentItem({
         </p>
       </div>
       {actions && (
-        <div className="flex shrink-0 items-center gap-2">{actions}</div>
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          {actions}
+        </div>
       )}
     </div>
   )
@@ -105,7 +113,7 @@ export function KpiCard({
     variant === 'violet'
       ? 'border-violet-200 bg-violet-50'
       : variant === 'navy'
-        ? 'border-navy-800 bg-navy-900 text-white'
+        ? 'border-navy-800 bg-card text-white'
         : 'border-slate-200 bg-white'
   const labelColor = variant === 'navy' ? 'text-navy-200' : 'text-slate-500'
   const valueColor = variant === 'navy' ? 'text-white' : 'text-slate-900'

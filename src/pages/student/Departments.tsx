@@ -140,7 +140,7 @@ function DeptTile({
         'flex items-center gap-3 rounded-2xl border p-4 text-left transition',
         active
           ? 'border-navy-900 bg-navy-900 text-white shadow-sm'
-          : 'border-slate-200 bg-white hover:border-brand-300 hover:shadow-sm',
+          : 'border-slate-200 bg-white hover:-translate-y-px hover:border-[#cbd6e8] hover:shadow-[0_6px_14px_rgba(32,53,87,0.05)]',
       )}
     >
       <span
@@ -178,7 +178,7 @@ function FacultyCard({ instructor: i }: { instructor: InstructorDirectoryEntry }
   return (
     <Link
       to={`/student/appointments/new?instructor=${i.id}`}
-      className="flex items-center gap-3 rounded-xl border border-slate-200 p-3 transition hover:border-brand-300 hover:bg-brand-50/40"
+      className="flex items-center gap-3 rounded-xl border border-slate-200 p-3 transition hover:-translate-y-px hover:border-[#cbd6e8] hover:shadow-[0_6px_14px_rgba(32,53,87,0.05)]"
     >
       <Avatar name={i.user?.name} src={i.user?.profile_picture_url} size="md" />
       <div className="min-w-0 flex-1">

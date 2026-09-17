@@ -87,7 +87,7 @@ export default function AdminDashboard() {
         <SectionCard
           title="Consultation Trend"
           description="Daily total vs completed appointments."
-          className="lg:col-span-2"
+          className="lg:col-span-2 border-t-4 border-t-[#83a3dd]"
         >
           <AppointmentTrend metrics={metrics} />
         </SectionCard>
@@ -95,6 +95,7 @@ export default function AdminDashboard() {
         <SectionCard
           title="Status Breakdown"
           description="Month-to-date appointments by status."
+          className="border-t-4 border-t-[#9a8ad1]"
         >
           <StatusBreakdown metrics={metrics} />
         </SectionCard>
@@ -104,7 +105,7 @@ export default function AdminDashboard() {
         <SectionCard
           title="Consultation Volume by Department"
           description="Month-to-date appointment distribution."
-          className="lg:col-span-2"
+          className="lg:col-span-2 border-t-4 border-t-[#d2a15c]"
         >
           <DepartmentVolume data={byDepartment} />
         </SectionCard>
@@ -151,7 +152,7 @@ export default function AdminDashboard() {
 
         <Link
           to="/admin/users"
-          className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-brand-300"
+          className="flex items-center justify-between self-start rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-brand-300"
         >
           <div>
             <div className="text-sm font-semibold text-slate-800">

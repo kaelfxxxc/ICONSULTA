@@ -133,7 +133,7 @@ export default function InstructorDashboard() {
               requests.map((a) => (
                 <div
                   key={a.id}
-                  className="flex items-center gap-4 rounded-xl border border-slate-200 p-4"
+                  className="flex items-center gap-4 rounded-xl border border-slate-200 p-4 transition hover:-translate-y-px hover:border-[#cbd6e8] hover:shadow-[0_6px_14px_rgba(32,53,87,0.05)]"
                 >
                   <DateBlock iso={a.scheduled_at} />
                   <div className="min-w-0 flex-1">
@@ -152,16 +152,16 @@ export default function InstructorDashboard() {
                     <button
                       onClick={() => approve.mutate(a.id)}
                       disabled={approve.isPending}
-                      className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-[#d9f7eb] px-3 py-2 text-xs font-semibold text-[#0e9a71] transition hover:bg-[#c3eedd] disabled:opacity-50"
                     >
-                      <CheckIcon className="h-4 w-4" /> Approve
+                      <CheckIcon className="h-4 w-4" />
                     </button>
                     <button
                       onClick={() => reject.mutate({ id: a.id })}
                       disabled={reject.isPending}
-                      className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-red-600 ring-1 ring-red-200 transition hover:bg-red-50 disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-[#fbe9ea] px-3 py-2 text-xs font-semibold text-[#b3454b] transition hover:bg-[#f5d9db] disabled:opacity-50"
                     >
-                      <XIcon className="h-4 w-4" /> Reject
+                      <XIcon className="h-4 w-4" />
                     </button>
                   </div>
                 </div>
@@ -235,7 +235,7 @@ function MeetingRow({
   onStart: () => void
 }) {
   return (
-    <div className="flex items-center gap-4 rounded-xl border border-slate-200 p-4 transition hover:border-slate-300 hover:shadow-sm">
+    <div className="flex items-center gap-4 rounded-xl border border-slate-200 p-4 transition hover:-translate-y-px hover:border-[#cbd6e8] hover:shadow-[0_6px_14px_rgba(32,53,87,0.05)]">
       <DateBlock iso={a.scheduled_at} />
       <div className="min-w-0 flex-1">
         <div className="truncate font-semibold text-slate-800">
