@@ -85,6 +85,15 @@ h4 {
   background-size: 18px 18px;
 }
 
+/* "View all →" / "All departments →" section-header action links. Lifted out of
+   the two student-dashboard headers, which were each carrying the same
+   12-utility string.
+   This rule is unlayered, and unlayered CSS outranks Tailwind's `@layer
+   utilities` — so `link-more` wins over any utility class sharing an element. */
+.link-more {
+  @apply rounded-lg p-2 text-sm font-extrabold text-brand-700 transition hover:bg-slate-100 hover:text-brand-800;
+}
+
 /* Thin scrollbars for in-card scroll regions (transcript, tables). */
 .scroll-slim::-webkit-scrollbar {
   width: 8px;

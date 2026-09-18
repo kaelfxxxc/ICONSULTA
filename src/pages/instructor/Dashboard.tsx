@@ -9,7 +9,6 @@ import {
 import { useAvailability } from '../../hooks/useInstructors'
 import { AiSummaryPanel, DateBlock, KpiCard } from '../../components/dashboard'
 import {
-  Badge,
   EmptyState,
   Loader,
   PageHeader,
@@ -89,41 +88,22 @@ export default function InstructorDashboard() {
         />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="space-y-6 lg:col-span-2">
-          {/* Upcoming meetings */}
-          <SectionCard
-            title="Upcoming Meetings"
-            action={
-              <Link
-                to="/instructor/requests"
-                className="text-sm font-medium text-brand-600 hover:text-brand-700"
-              >
-                View all
-              </Link>
-            }
-            bodyClassName="space-y-3"
-          >
-            {isLoading ? (
-              <Loader />
-            ) : upcoming.length === 0 ? (
-              <EmptyState
-                icon={CalendarIcon}
-                title="No confirmed meetings"
-                hint="Approved consultations will appear here."
-              />
-            ) : (
-              upcoming.map((a) => (
-                <MeetingRow
-                  key={a.id}
-                  appointment={a}
-                  onStart={() => navigate(`/session/${a.id}`)}
-                />
-              ))
-            )}
+      <div className="grid gap-6 lg:grid-cols-[13rem_minmax(0,1fr)_16rem]">
+        {/* Left — availability */}
+        <div>
+          <SectionCard title="Weekly Availability" bodyClassName="p-3">
+            <WeeklyAvailability slots={availability ?? []} />
+            <Link
+              to="/instructor/schedule"
+              className="link-more mt-4 flex items-center justify-center gap-1.5"
+            >
+              Edit availability →
+            </Link>
           </SectionCard>
+        </div>
 
-          {/* Pending requests */}
+        {/* Center — requests, then confirmed meetings */}
+        <div className="space-y-6">
           <SectionCard title="Consultation Requests" bodyClassName="space-y-3">
             {requests.length === 0 ? (
               <p className="py-6 text-center text-sm text-slate-500">
@@ -148,75 +128,94 @@ export default function InstructorDashboard() {
                       {formatDateTime(a.scheduled_at)}
                     </div>
                   </div>
-                  <div className="flex shrink-0 items-center gap-2">
+                  <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
                     <button
                       onClick={() => approve.mutate(a.id)}
                       disabled={approve.isPending}
                       className="inline-flex items-center gap-1.5 rounded-lg bg-[#d9f7eb] px-3 py-2 text-xs font-semibold text-[#0e9a71] transition hover:bg-[#c3eedd] disabled:opacity-50"
                     >
-                      <CheckIcon className="h-4 w-4" />
+                      <CheckIcon className="h-4 w-4" /> Approve
                     </button>
                     <button
                       onClick={() => reject.mutate({ id: a.id })}
                       disabled={reject.isPending}
                       className="inline-flex items-center gap-1.5 rounded-lg bg-[#fbe9ea] px-3 py-2 text-xs font-semibold text-[#b3454b] transition hover:bg-[#f5d9db] disabled:opacity-50"
                     >
-                      <XIcon className="h-4 w-4" />
+                      <XIcon className="h-4 w-4" /> Decline
                     </button>
                   </div>
                 </div>
               ))
             )}
           </SectionCard>
+
+          <SectionCard
+            title="Upcoming Meetings"
+            action={
+              <Link
+                to="/instructor/requests"
+                className="link-more"
+              >
+                View all →
+              </Link>
+            }
+            bodyClassName="space-y-3"
+          >
+            {isLoading ? (
+              <Loader />
+            ) : upcoming.length === 0 ? (
+              <EmptyState
+                icon={CalendarIcon}
+                title="No confirmed meetings"
+                hint="Approved consultations will appear here."
+              />
+            ) : (
+              upcoming.map((a) => (
+                <MeetingRow
+                  key={a.id}
+                  appointment={a}
+                  onStart={() => navigate(`/session/${a.id}`)}
+                />
+              ))
+            )}
+          </SectionCard>
         </div>
 
-        {/* Aside */}
-        <div className="space-y-6">
-          <SectionCard title="Weekly Availability">
-            <WeeklyAvailability slots={availability ?? []} />
-            <Link
-              to="/instructor/schedule"
-              className="mt-4 block text-center text-sm font-medium text-brand-600 hover:text-brand-700"
-            >
-              Edit availability
-            </Link>
-          </SectionCard>
-
-          <SectionCard title="Recent Logs" bodyClassName="space-y-2">
+        {/* Right — activity feed */}
+        <div>
+          <SectionCard title="Recent Logs" bodyClassName="space-y-3">
             {recent.length === 0 ? (
               <p className="py-4 text-center text-sm text-slate-500">
                 No completed sessions yet.
               </p>
             ) : (
               recent.map((a) => (
-                <div key={a.id} className="rounded-xl border border-slate-100 p-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="min-w-0">
-                      <div className="truncate text-sm font-medium text-slate-800">
-                        {a.reason ?? 'Consultation'}
-                      </div>
-                      <div className="truncate text-xs text-slate-500">
-                        {a.student?.user?.name}
-                      </div>
+                <div key={a.id} className="flex gap-3">
+                  <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-violet-400" />
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-medium text-slate-800">
+                      {a.reason ?? 'Consultation'}
                     </div>
-                    <Badge tone="violet">Summary Ready</Badge>
+                    <div className="truncate text-xs text-slate-500">
+                      {a.student?.user?.name}
+                    </div>
+                    <button
+                      onClick={() =>
+                        setOpenSummary(openSummary === a.id ? null : a.id)
+                      }
+                      className="mt-1.5 inline-flex items-center gap-1.5 text-xs font-semibold text-violet-600 hover:text-violet-700"
+                    >
+                      <SparklesIcon className="h-3.5 w-3.5" />
+                      {openSummary === a.id ? 'Hide AI Summary' : 'AI Summary Ready'}
+                    </button>
+                    {openSummary === a.id && (
+                      <AiSummaryPanel
+                        className="mt-2"
+                        summary={a.summary?.summary}
+                        pending={!a.summary?.summary}
+                      />
+                    )}
                   </div>
-                  <button
-                    onClick={() =>
-                      setOpenSummary(openSummary === a.id ? null : a.id)
-                    }
-                    className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-violet-600 hover:text-violet-700"
-                  >
-                    <SparklesIcon className="h-3.5 w-3.5" />
-                    {openSummary === a.id ? 'Hide summary' : 'View AI Summary'}
-                  </button>
-                  {openSummary === a.id && (
-                    <AiSummaryPanel
-                      className="mt-2"
-                      summary={a.summary?.summary}
-                      pending={!a.summary?.summary}
-                    />
-                  )}
                 </div>
               ))
             )}
@@ -276,30 +275,36 @@ function WeeklyAvailability({ slots }: { slots: InstructorAvailability[] }) {
   }, [slots])
 
   return (
-    <ul className="space-y-1.5">
+    <ul className="space-y-2.5">
       {[1, 2, 3, 4, 5, 6, 7].map((d) => {
         const daySlots = byDay.get(d) ?? []
         return (
-          <li key={d} className="flex items-start gap-3 text-sm">
-            <span className="w-24 shrink-0 font-medium text-slate-600">
-              {DAY_NAMES[d]}
-            </span>
-            <span className="flex flex-wrap gap-1.5">
-              {daySlots.length === 0 ? (
-                <span className="text-xs text-slate-400">—</span>
-              ) : (
-                daySlots.map((s) => (
+          <li key={d}>
+            <div className="flex items-baseline justify-between gap-2">
+              <span
+                className={cn(
+                  'text-xs font-semibold uppercase tracking-wide',
+                  daySlots.length === 0 ? 'text-slate-300' : 'text-slate-500',
+                )}
+              >
+                {DAY_NAMES[d].slice(0, 3)}
+              </span>
+              {daySlots.length === 0 && (
+                <span className="text-xs text-slate-300">—</span>
+              )}
+            </div>
+            {daySlots.length > 0 && (
+              <div className="mt-1 flex flex-col gap-1">
+                {daySlots.map((s) => (
                   <span
                     key={s.id}
-                    className={cn(
-                      'rounded-md bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-700',
-                    )}
+                    className="rounded-md bg-brand-50 px-2 py-1 text-xs font-medium text-brand-700"
                   >
                     {formatTime(s.start_time)}–{formatTime(s.end_time)}
                   </span>
-                ))
-              )}
-            </span>
+                ))}
+              </div>
+            )}
           </li>
         )
       })}

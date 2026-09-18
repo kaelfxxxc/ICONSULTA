@@ -69,7 +69,7 @@ export default function StudentDashboard() {
             action={
               <Link
                 to="/student/appointments"
-                className="text-sm font-extrabold text-brand-700 hover:text-brand-800 hover:bg-slate-100 p-2 rounded-lg transition"
+                className="link-more"
               >
                 View all →
               </Link>
@@ -129,7 +129,7 @@ export default function StudentDashboard() {
             action={
               <Link
                 to="/student/departments"
-                className="text-sm font-extrabold text-brand-700 hover:text-brand-800 hover:bg-slate-100 p-2 rounded-lg transition"
+                className="link-more"
               >
                 All departments →
               </Link>
