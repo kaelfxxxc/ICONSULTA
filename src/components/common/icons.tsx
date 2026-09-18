@@ -237,6 +237,23 @@ export function GraduationCapIcon(p: IconProps) {
   )
 }
 
+export function BriefcaseIcon(p: IconProps) {
+  return (
+    <Base {...p}>
+      <rect x="2" y="6" width="20" height="14" rx="2" />
+      <path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+    </Base>
+  )
+}
+
+export function LaptopIcon(p: IconProps) {
+  return (
+    <Base {...p}>
+      <path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0 1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16" />
+    </Base>
+  )
+}
+
 export function IdCardIcon(p: IconProps) {
   return (
     <Base {...p}>
@@ -338,6 +355,15 @@ export function BuildingIcon(p: IconProps) {
     <Base {...p}>
       <rect x="4" y="2" width="16" height="20" rx="1" />
       <path d="M9 22v-4h6v4M9 6h.01M13 6h.01M9 10h.01M13 10h.01M9 14h.01M13 14h.01" />
+    </Base>
+  )
+}
+
+export function HomeIcon(p: IconProps) {
+  return (
+    <Base {...p}>
+      <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+      <path d="M9 22V12h6v10" />
     </Base>
   )
 }

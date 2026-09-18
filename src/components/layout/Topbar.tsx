@@ -41,7 +41,7 @@ export function Topbar({
   }
 
   return (
-    <header className="sticky top-0 z-20 flex h-16 items-center gap-6 border-b border-slate-200 bg-white/90 px-4 backdrop-blur lg:px-6">
+    <header className="sticky top-0 z-20 flex h-16 items-center gap-6 border-b border-slate-200 bg-slate-100 px-4 backdrop-blur lg:px-6">
       <div className="flex flex-1 items-center gap-2">
         <button
           type="button"
@@ -60,7 +60,7 @@ export function Topbar({
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search faculty, departments, or topics…"
-                className="w-full rounded-full border border-slate-200 bg-slate-50 py-2 pl-10 pr-4 text-sm outline-none transition focus:border-brand-400 focus:bg-white focus:ring-2 focus:ring-brand-100"
+                className="w-full rounded-full border border-slate-200 bg-white py-2 pl-10 pr-4 text-sm outline-none transition focus:border-brand-400 focus:bg-white focus:ring-2 focus:ring-brand-100"
               />
             </div>
           </form>
@@ -76,7 +76,7 @@ export function Topbar({
           <button
             type="button"
             onClick={() => setMenuOpen((v) => !v)}
-            className="flex items-center gap-2 rounded-full py-1 pl-1 pr-2 transition hover:bg-slate-100"
+            className="flex items-center gap-2 rounded-xl border border-slate-200 py-1 pl-1 pr-2 transition hover:bg-white"
           >
             <Avatar name={profile?.name} size="sm" />
             <span className="hidden text-left sm:block">

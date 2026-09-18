@@ -46,7 +46,7 @@ body {
   background: #f1f5f9; /* slate-100 — the app canvas */
   color: #0f172a;
   font-family: var(--font-sans);
-  font-weight: 750;
+  font-weight: 500;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
@@ -57,9 +57,10 @@ h2,
 h3,
 h4 {
   font-family: var(--font-display);
+  font-weight: 800;
 }
 .bg-card{
-  background: linear-gradient(130deg, #102348 0%, #162d5a 70%, #1b3b72 100%);
+  background: linear-gradient(160deg, rgb(13, 27, 75) 0%, rgb(26, 52, 128) 100%);
 }
 .login-shadow{
   box-shadow: 16px 18px 0 rgba(16, 35, 72, 0.035), 0 16px 42px rgba(31, 49, 79, 0.06);

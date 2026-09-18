@@ -69,9 +69,9 @@ export default function StudentDashboard() {
             action={
               <Link
                 to="/student/appointments"
-                className="text-sm font-medium text-brand-600 hover:text-brand-700"
+                className="text-sm font-extrabold text-brand-700 hover:text-brand-800 hover:bg-slate-100 p-2 rounded-lg transition"
               >
-                View all
+                View all →
               </Link>
             }
             bodyClassName="space-y-3"
@@ -129,9 +129,9 @@ export default function StudentDashboard() {
             action={
               <Link
                 to="/student/departments"
-                className="text-sm font-medium text-brand-600 hover:text-brand-700"
+                className="text-sm font-extrabold text-brand-700 hover:text-brand-800 hover:bg-slate-100 p-2 rounded-lg transition"
               >
-                All departments
+                All departments →
               </Link>
             }
           >
@@ -200,7 +200,7 @@ export default function StudentDashboard() {
             </p>
             <Link
               to="/student/appointments/new"
-              className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-navy-900 transition hover:bg-navy-50"
+              className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#ffffff1f] border border-slate-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:-translate-y-px hover:border-white/45 hover:bg-white/20 hover:shadow-[0_8px_20px_rgba(5,15,40,0.35)] active:translate-y-0"
             >
                Book New Session
             </Link>
