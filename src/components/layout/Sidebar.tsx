@@ -2,7 +2,7 @@ import { NavLink, Link } from 'react-router-dom'
 import type { Role } from '../../types'
 import { ROLE_LABEL } from '../../utils/constants'
 import { cn } from '../../lib/utils'
-import { Avatar, LogoMark, PlusIcon } from '../common'
+import { Avatar, LogoMark } from '../common'
 import { NAV } from './navConfig'
 
 export function Brand({ compact: _compact = false }: { compact?: boolean }) {

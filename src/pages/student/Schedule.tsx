@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useProfile } from '../../hooks/useProfile'
 import { useStudentAppointments } from '../../hooks/useAppointments'
 import {
@@ -9,7 +9,7 @@ import {
   SectionCard,
   Badge,
 } from '../../components/common'
-import { CalendarIcon, PlusIcon, VideoIcon } from '../../components/common/icons'
+import { CalendarIcon, VideoIcon } from '../../components/common/icons'
 import { DateBlock } from '../../components/dashboard'
 import { formatTime, statusLabel, statusTone } from '../../lib/utils'
 import type { AppointmentWithParties } from '../../types'
