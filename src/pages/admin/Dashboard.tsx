@@ -12,10 +12,6 @@ import {
 import {
   ArrowRightIcon,
   BarChartIcon,
-  CpuIcon,
-  DatabaseIcon,
-  ServerIcon,
-  ShieldCheckIcon,
   UsersIcon,
 } from '../../components/common/icons'
 
@@ -84,86 +80,70 @@ export default function AdminDashboard() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <SectionCard
-          title="Consultation Trend"
-          description="Daily total vs completed appointments."
-          className="lg:col-span-2 border-t-4 border-t-[#83a3dd]"
-        >
-          <AppointmentTrend metrics={metrics} />
-        </SectionCard>
+        {/* Left — live feed, then the users shortcut */}
+        <div className="space-y-6">
+          <SectionCard
+            title="Live Activity"
+            description="New consultation requests as they arrive."
+          >
+            <LiveActivityFeed events={liveEvents} />
+          </SectionCard>
 
-        <SectionCard
-          title="Status Breakdown"
-          description="Month-to-date appointments by status."
-          className="border-t-4 border-t-[#9a8ad1]"
-        >
-          <StatusBreakdown metrics={metrics} />
-        </SectionCard>
-      </div>
-
-      <div className="mt-6 grid gap-6 lg:grid-cols-3">
-        <SectionCard
-          title="Consultation Volume by Department"
-          description="Month-to-date appointment distribution."
-          className="lg:col-span-2 border-t-4 border-t-[#d2a15c]"
-        >
-          <DepartmentVolume data={byDepartment} />
-        </SectionCard>
-
-        <SectionCard
-          title="Live Activity"
-          description="New consultation requests as they arrive."
-        >
-          <LiveActivityFeed events={liveEvents} />
-        </SectionCard>
-      </div>
-
-      <div className="mt-6 grid gap-6 lg:grid-cols-2">
-        <SectionCard title="System Status">
-          <SystemStatusList
-            items={[
-              {
-                label: 'API Server',
-                value: 'Operational',
-                ok: true,
-                icon: ServerIcon,
-              },
-              {
-                label: 'Database',
-                value: 'Healthy',
-                ok: true,
-                icon: DatabaseIcon,
-              },
-              {
-                label: 'Auth Service',
-                value: 'Operational',
-                ok: true,
-                icon: ShieldCheckIcon,
-              },
-              {
-                label: 'AI Summaries',
-                value: 'Running',
-                ok: true,
-                icon: CpuIcon,
-              },
-            ]}
-          />
-        </SectionCard>
-
-        <Link
-          to="/admin/users"
-          className="flex items-center justify-between self-start rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-brand-300"
-        >
-          <div>
-            <div className="text-sm font-semibold text-slate-800">
-              Manage Users
+          <Link
+            to="/admin/users"
+            className="bg-card group flex items-center justify-between rounded-2xl p-5 text-white shadow-sm transition hover:-translate-y-px hover:shadow-[0_10px_24px_rgba(13,27,75,0.28)]"
+          >
+            <div>
+              <div className="text-sm font-semibold">Manage Users</div>
+              <div className="text-xs text-navy-200">
+                Roles, status, and directory
+              </div>
             </div>
-            <div className="text-xs text-slate-500">
-              Roles, status, and directory
-            </div>
-          </div>
-          <ArrowRightIcon className="h-5 w-5 text-slate-300" />
-        </Link>
+            <ArrowRightIcon className="h-5 w-5 shrink-0 text-navy-300 transition group-hover:translate-x-0.5" />
+          </Link>
+        </div>
+
+        {/* Center — trend, then volume. Both span the column width. */}
+        <div className="space-y-6">
+          <SectionCard
+            title="Consultation Trend"
+            description="Daily total vs completed appointments."
+            className="border-t-4 border-t-[#83a3dd]"
+          >
+            <AppointmentTrend metrics={metrics} />
+          </SectionCard>
+
+          <SectionCard
+            title="Consultation Volume by Department"
+            description="Month-to-date appointment distribution."
+            className="border-t-4 border-t-[#d2a15c]"
+          >
+            <DepartmentVolume data={byDepartment} />
+          </SectionCard>
+        </div>
+
+        {/* Right — breakdown, then the health list */}
+        <div className="space-y-6">
+          <SectionCard
+            title="Status Breakdown"
+            description="Month-to-date appointments by status."
+            className="border-t-4 border-t-[#9a8ad1]"
+          >
+            <StatusBreakdown metrics={metrics} />
+          </SectionCard>
+
+          <SectionCard title="System Status">
+            <SystemStatusList
+              compact
+              items={[
+                { label: 'API Server', value: 'Operational', ok: true },
+                { label: 'Database', value: 'Healthy', ok: true },
+                { label: 'Auth Service', value: 'Operational', ok: true },
+                { label: 'AI Summaries', value: 'Running', ok: true },
+              ]}
+            />
+          </SectionCard>
+        </div>
       </div>
     </div>
   )

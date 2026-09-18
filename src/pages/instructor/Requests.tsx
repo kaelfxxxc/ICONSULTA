@@ -7,6 +7,7 @@ import {
 } from '../../hooks/useAppointments'
 import { AiSummaryPanel, AppointmentItem } from '../../components/dashboard'
 import {
+  ApproveDecline,
   EmptyState,
   Loader,
   PageHeader,
@@ -14,10 +15,8 @@ import {
 } from '../../components/common'
 import {
   CalendarIcon,
-  CheckIcon,
   SparklesIcon,
   VideoIcon,
-  XIcon,
 } from '../../components/common/icons'
 import { DEPARTMENT_LABEL } from '../../utils/constants'
 import { cn } from '../../lib/utils'
@@ -103,22 +102,11 @@ export default function InstructorRequests() {
                 actions={
                   <div className="flex flex-wrap items-center justify-end gap-2">
                     {a.status === 'pending' && (
-                      <>
-                        <button
-                          onClick={() => approve.mutate(a.id)}
-                          disabled={busy}
-                          className="inline-flex items-center gap-1.5 rounded-lg bg-[#d9f7eb] px-3 py-2  text-xs font-semibold text-[#0e9a71] transition hover:bg-[#c3eedd] disabled:opacity-50"
-                        >
-                          <CheckIcon className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => reject.mutate({ id: a.id })}
-                          disabled={busy}
-                          className="inline-flex items-center gap-1.5 rounded-lg bg-[#fbe9ea] px-3 py-2 text-xs font-semibold text-[#b3454b] transition hover:bg-[#f5d9db] disabled:opacity-50"
-                        >
-                          <XIcon className="h-4 w-4" />
-                        </button>
-                      </>
+                      <ApproveDecline
+                        onApprove={() => approve.mutate(a.id)}
+                        onDecline={() => reject.mutate({ id: a.id })}
+                        disabled={busy}
+                      />
                     )}
                     {a.status === 'approved' && (
                       <>

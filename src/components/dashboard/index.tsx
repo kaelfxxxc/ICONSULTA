@@ -218,9 +218,44 @@ export function AiSummaryPanel({
 /** Labelled status rows for the admin "System Status" card. */
 export function SystemStatusList({
   items,
+  compact = false,
 }: {
-  items: { label: string; value: string; ok: boolean; icon: IconType }[]
+  items: { label: string; value: string; ok: boolean; icon?: IconType }[]
+  /**
+   * Compact rows: a lead status dot carries the health signal instead of the
+   * icon tile, which is what frees the vertical space. `icon` is unused here,
+   * hence optional on the type.
+   */
+  compact?: boolean
 }) {
+  if (compact) {
+    return (
+      <ul className="space-y-2.5">
+        {items.map((it) => (
+          <li key={it.label} className="flex items-center gap-2.5">
+            <span
+              className={cn(
+                'h-2 w-2 shrink-0 rounded-full',
+                it.ok ? 'bg-emerald-500' : 'bg-red-500',
+              )}
+            />
+            <span className="min-w-0 flex-1 truncate text-sm text-slate-600">
+              {it.label}
+            </span>
+            <span
+              className={cn(
+                'shrink-0 text-xs font-medium',
+                it.ok ? 'text-slate-400' : 'text-red-600',
+              )}
+            >
+              {it.value}
+            </span>
+          </li>
+        ))}
+      </ul>
+    )
+  }
+
   return (
     <ul className="space-y-3">
       {items.map((it) => {
@@ -228,7 +263,7 @@ export function SystemStatusList({
         return (
           <li key={it.label} className="flex items-center gap-3">
             <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
-              <Icon className="h-[18px] w-[18px]" />
+              {Icon && <Icon className="h-[18px] w-[18px]" />}
             </span>
             <div className="min-w-0 flex-1">
               <div className="text-sm font-medium text-slate-700">
