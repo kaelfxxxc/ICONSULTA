@@ -79,7 +79,14 @@ export default function AdminDashboard() {
         />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      {/*
+        Center gets twice the width of either side — it holds the two charts,
+        which need the horizontal room, while the side columns hold a feed, a
+        donut and a health list that read fine narrow. Ratios rather than the
+        instructor dashboard's fixed rem sides, because these side columns
+        carry more content than a compact availability list does.
+      */}
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)_minmax(0,1fr)]">
         {/* Left — live feed, then the users shortcut */}
         <div className="space-y-6">
           <SectionCard

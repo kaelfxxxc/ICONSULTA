@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useInstructors } from '../../hooks/useInstructors'
 import { useAnalytics } from '../../hooks/useAnalytics'
 import {
@@ -6,6 +6,7 @@ import {
   EmptyState,
   Loader,
   PageHeader,
+  SchoolNav,
   SectionCard,
 } from '../../components/common'
 import { BuildingIcon, UsersIcon } from '../../components/common/icons'
@@ -16,6 +17,7 @@ import type { Department } from '../../types'
 export default function AdminDepartments() {
   const { data: instructors, isLoading } = useInstructors()
   const { data: analytics } = useAnalytics()
+  const [dept, setDept] = useState<Department | 'all'>('all')
 
   const volume = useMemo(() => {
     const map = new Map<Department, number>()
@@ -31,6 +33,9 @@ export default function AdminDepartments() {
       })),
     [instructors],
   )
+
+  const visible =
+    dept === 'all' ? grouped : grouped.filter((g) => g.code === dept)
 
   return (
     <div>
@@ -51,50 +56,70 @@ export default function AdminDepartments() {
         ))}
       </div>
 
-      {isLoading ? (
-        <Loader />
-      ) : (
+      <div className="grid gap-6 lg:grid-cols-[16rem_minmax(0,1fr)]">
+        {/*
+          School nav, matching the student Departments page — minus its search
+          field, since this directory is short and admins arrive knowing which
+          school they want. No counts either: each school's faculty number is
+          already in the KPI cards above, so badges here only repeat it.
+
+          `lg:self-start` is load-bearing: grid items stretch to the row height
+          by default, and a sticky element with no room to travel never moves.
+
+          The `<aside>` also must not sit inside a SectionCard: that root carries
+          `overflow-hidden`, which disables sticky on all its descendants.
+        */}
+        <aside className="lg:sticky lg:top-6 lg:self-start">
+          <SectionCard title="Schools" bodyClassName="p-3">
+            <SchoolNav active={dept} onSelect={setDept} groups={grouped} />
+          </SectionCard>
+        </aside>
+
         <div className="space-y-6">
-          {grouped.map((g) => (
-            <SectionCard
-              key={g.code}
-              title={`${g.name} (${g.code})`}
-              description={`${g.people.length} faculty · ${volume.get(g.code) ?? 0} consultations this month`}
-            >
-              {g.people.length === 0 ? (
-                <EmptyState
-                  icon={BuildingIcon}
-                  title="No faculty listed"
-                  hint="No instructors are assigned to this school yet."
-                />
-              ) : (
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  {g.people.map((i) => (
-                    <div
-                      key={i.id}
-                      className="flex items-center gap-3 rounded-xl border border-slate-200 p-3"
-                    >
-                      <Avatar
-                        name={i.user?.name}
-                        src={i.user?.profile_picture_url}
-                        size="md"
-                      />
-                      <div className="min-w-0">
-                        <div className="truncate text-sm font-semibold text-slate-800">
-                          {i.user?.name}
-                        </div>
-                        <div className="truncate text-xs text-slate-500">
-                          {i.category ?? 'Faculty'}
+          {isLoading ? (
+            <Loader />
+          ) : (
+            visible.map((g) => (
+              <SectionCard
+                key={g.code}
+                title={`${g.name} (${g.code})`}
+                description={`${g.people.length} faculty · ${volume.get(g.code) ?? 0} consultations this month`}
+              >
+                {g.people.length === 0 ? (
+                  <EmptyState
+                    icon={BuildingIcon}
+                    title="No faculty listed"
+                    hint="No instructors are assigned to this school yet."
+                  />
+                ) : (
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    {g.people.map((i) => (
+                      <div
+                        key={i.id}
+                        className="flex items-center gap-3 rounded-xl border border-slate-200 p-3"
+                      >
+                        <Avatar
+                          name={i.user?.name}
+                          src={i.user?.profile_picture_url}
+                          size="md"
+                        />
+                        <div className="min-w-0">
+                          <div className="truncate text-sm font-semibold text-slate-800">
+                            {i.user?.name}
+                          </div>
+                          <div className="truncate text-xs text-slate-500">
+                            {i.category ?? 'Faculty'}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </SectionCard>
-          ))}
+                    ))}
+                  </div>
+                )}
+              </SectionCard>
+            ))
+          )}
         </div>
-      )}
+      </div>
     </div>
   )
 }
