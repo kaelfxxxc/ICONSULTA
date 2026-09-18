@@ -84,7 +84,18 @@ h4 {
   background-image: radial-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px);
   background-size: 18px 18px;
 }
+.btn-card {
+  background: linear-gradient(135deg, rgb(13, 27, 75) 0%, rgb(30, 58, 138) 100%);
+  border: 1.5px solid transparent;
+  box-shadow: 0 8px 24px rgba(13, 27, 75, 0.2);
+  transition: all 200ms ease-in-out;
+}
 
+.btn-card:hover {
+  transform: translateY(-1px);
+  border-color: #cbd5e1;
+  box-shadow: 0 6px 14px rgba(32, 51, 87, 0.05);
+}
 /* "View all →" / "All departments →" section-header action links. Lifted out of
    the two student-dashboard headers, which were each carrying the same
    12-utility string.

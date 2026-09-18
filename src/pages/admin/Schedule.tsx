@@ -1,18 +1,35 @@
 import { useMemo, useState } from 'react'
-import { useInstructors, useAvailability } from '../../hooks/useInstructors'
+import {
+  useInstructors,
+  useAvailability,
+  useAllAvailability,
+} from '../../hooks/useInstructors'
 import {
   Avatar,
+  Badge,
   EmptyState,
   Loader,
   PageHeader,
   SectionCard,
 } from '../../components/common'
 import { ClockIcon, UsersIcon } from '../../components/common/icons'
-import { DAY_NAMES, DEPARTMENT_LABEL } from '../../utils/constants'
+import {
+  DAY_NAMES,
+  DEPARTMENT_ACCENT,
+  DEPARTMENT_LABEL,
+  NO_DEPARTMENT_ACCENT,
+} from '../../utils/constants'
 import { cn, formatTime } from '../../lib/utils'
-import type { InstructorAvailability } from '../../types'
+import type { Department, InstructorAvailability } from '../../types'
 
 const DAYS = [1, 2, 3, 4, 5, 6, 7]
+
+/** Badge tone per school, matching that school's accent hue. */
+const DEPARTMENT_TONE: Record<Department, 'amber' | 'red' | 'blue'> = {
+  SOB: 'amber', // orange accent
+  SOT: 'red',
+  SOE: 'blue',
+}
 
 export default function AdminSchedule() {
   const { data: instructors, isLoading } = useInstructors()
@@ -23,6 +40,22 @@ export default function AdminSchedule() {
 
   const { data: availability, isLoading: loadingSlots } =
     useAvailability(selected ?? undefined)
+
+  // The selector shows a day count on every row, so it needs all faculty at
+  // once rather than one request per instructor.
+  const { data: allAvailability } = useAllAvailability()
+
+  /** Distinct available days per instructor, keyed by instructor profile id. */
+  const activeDaysByInstructor = useMemo(() => {
+    const map = new Map<string, Set<number>>()
+    for (const s of allAvailability ?? []) {
+      if (!s.is_available) continue
+      const days = map.get(s.instructor_id) ?? new Set<number>()
+      days.add(s.day_of_week)
+      map.set(s.instructor_id, days)
+    }
+    return map
+  }, [allAvailability])
 
   const byDay = useMemo(() => {
     const map = new Map<number, InstructorAvailability[]>()
@@ -38,6 +71,17 @@ export default function AdminSchedule() {
   }, [availability])
 
   const current = instructors?.find((i) => i.id === selected)
+  const accent = current?.department
+    ? DEPARTMENT_ACCENT[current.department]
+    : NO_DEPARTMENT_ACCENT
+
+  // byDay only holds days with at least one available slot, so its size is the
+  // active-day count and its contents total the slot count.
+  const activeDays = byDay.size
+  const totalSlots = useMemo(
+    () => [...byDay.values()].reduce((n, arr) => n + arr.length, 0),
+    [byDay],
+  )
 
   return (
     <div>
@@ -57,26 +101,48 @@ export default function AdminSchedule() {
           />
         </SectionCard>
       ) : (
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="grid gap-6 lg:grid-cols-[1fr_2fr]">
           {/* Faculty list */}
-          <div className="lg:col-span-1">
-            <SectionCard title="Faculty" bodyClassName="space-y-1 p-2">
+          <div>
+            <SectionCard title="Faculty" bodyClassName="space-y-4 p-2">
               {(instructors ?? []).map((i) => (
                 <button
                   key={i.id}
                   onClick={() => setPicked(i.id)}
+                  aria-pressed={selected === i.id}
                   className={cn(
                     'flex w-full items-center gap-3 rounded-xl p-2.5 text-left transition',
                     selected === i.id
-                      ? 'bg-navy-900 text-white'
-                      : 'hover:bg-slate-100',
+                      ? 'bg-card text-white'
+                      : 'border-[1.5px] border-transparent shadow-[0_8px_24px_rgba(13,27,75,0.2)] hover:bg-slate-100',
                   )}
                 >
-                  <Avatar
-                    name={i.user?.name}
-                    src={i.user?.profile_picture_url}
-                    size="sm"
-                  />
+                  {/* School dot. The ring takes the colour of whatever the row
+                      is sitting on, so the dot reads as cut out of the avatar
+                      rather than pasted on top. */}
+                  <span className="relative shrink-0">
+                    <Avatar
+                      name={i.user?.name}
+                      src={i.user?.profile_picture_url}
+                      size="sm"
+                    />
+                    <span
+                      className={cn(
+                        'absolute -right-0.5 -bottom-0.5 h-3 w-3 rounded-full ring-2',
+                        selected === i.id ? 'ring-navy-800' : 'ring-white',
+                      )}
+                      style={{
+                        background: i.department
+                          ? DEPARTMENT_ACCENT[i.department]
+                          : NO_DEPARTMENT_ACCENT,
+                      }}
+                      title={
+                        i.department
+                          ? DEPARTMENT_LABEL[i.department]
+                          : 'No school on file'
+                      }
+                    />
+                  </span>
                   <div className="min-w-0">
                     <div
                       className={cn(
@@ -97,56 +163,109 @@ export default function AdminSchedule() {
                         : 'Faculty'}
                     </div>
                   </div>
+
+                  {/* Active-day count, pushed to the row's right edge. */}
+                  <span className="ml-auto shrink-0 text-right">
+                    <span
+                      className={cn(
+                        'block text-2xl leading-none font-black tabular-nums',
+                        selected === i.id ? 'text-white' : 'text-slate-800',
+                      )}
+                    >
+                      {activeDaysByInstructor.get(i.id)?.size ?? 0}
+                    </span>
+                    <span
+                      className={cn(
+                        'block text-[10px] font-semibold tracking-wide uppercase',
+                        selected === i.id ? 'text-navy-200' : 'text-slate-400',
+                      )}
+                    >
+                      days
+                    </span>
+                  </span>
                 </button>
               ))}
             </SectionCard>
           </div>
 
           {/* Weekly grid */}
-          <div className="lg:col-span-2">
+          <div>
             <SectionCard
-              title={current?.user?.name ?? 'Availability'}
+              title={
+                <span className="flex items-center gap-2">
+                  <span className="truncate text-base font-bold text-slate-900">
+                    {current?.user?.name ?? 'Availability'}
+                  </span>
+                  {current?.department && (
+                    <Badge tone={DEPARTMENT_TONE[current.department]}>
+                      {current.department}
+                    </Badge>
+                  )}
+                </span>
+              }
               description={
                 current?.category ?? 'Weekly consultation availability'
+              }
+              action={
+                totalSlots > 0 ? (
+                  <div className="flex items-center gap-2">
+                    <Stat label="Active Days" value={activeDays} />
+                    <Stat label="Total Slots" value={totalSlots} />
+                  </div>
+                ) : undefined
               }
             >
               {loadingSlots ? (
                 <Loader />
-              ) : (availability ?? []).length === 0 ? (
+              ) : totalSlots === 0 ? (
                 <EmptyState
                   icon={ClockIcon}
                   title="No availability set"
                   hint="This faculty member hasn't published any time slots yet."
                 />
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-1">
                   {DAYS.map((d) => {
                     const slots = byDay.get(d) ?? []
+                    const open = slots.length > 0
                     return (
                       <div
                         key={d}
-                        className="flex items-start gap-4 border-b border-slate-100 pb-3 last:border-0 last:pb-0"
+                        className="flex items-center gap-3 border-b border-slate-100 py-2.5 last:border-0"
                       >
-                        <span className="w-24 shrink-0 pt-0.5 text-sm font-semibold text-slate-700">
+                        {/* Availability at a glance — the school's colour on
+                            days with slots, neutral on days without. */}
+                        <span
+                          className="h-7 w-1 shrink-0 rounded-full"
+                          style={{
+                            background: open ? accent : '#e2e8f0', // slate-200
+                          }}
+                        />
+                        <span className="w-24 shrink-0 text-sm font-semibold text-slate-700">
                           {DAY_NAMES[d]}
                         </span>
-                        <div className="flex flex-1 flex-wrap gap-2">
-                          {slots.length === 0 ? (
-                            <span className="text-xs text-slate-400">
-                              Unavailable
-                            </span>
-                          ) : (
+                        <div className="flex min-w-0 flex-1 flex-wrap gap-1.5">
+                          {open ? (
                             slots.map((s) => (
                               <span
                                 key={s.id}
-                                className="rounded-lg bg-brand-50 px-2.5 py-1 text-xs font-medium text-brand-700"
+                                className="rounded-md bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-700"
                               >
                                 {formatTime(s.start_time)}–
                                 {formatTime(s.end_time)}
                               </span>
                             ))
+                          ) : (
+                            <span className="text-xs text-slate-400">
+                              Unavailable
+                            </span>
                           )}
                         </div>
+                        {open && (
+                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-sky-100 text-[11px] font-bold tabular-nums text-sky-700">
+                            {slots.length}
+                          </span>
+                        )}
                       </div>
                     )
                   })}
@@ -156,6 +275,20 @@ export default function AdminSchedule() {
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+/** Compact metric tile in the schedule panel header. */
+function Stat({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-xl bg-slate-50 px-3 py-1.5 text-center">
+      <div className="text-sm leading-none font-black tabular-nums text-slate-800">
+        {value}
+      </div>
+      <div className="mt-1 text-[10px] font-semibold tracking-wide text-slate-500 uppercase">
+        {label}
+      </div>
     </div>
   )
 }

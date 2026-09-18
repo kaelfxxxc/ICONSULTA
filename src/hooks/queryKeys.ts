@@ -19,6 +19,8 @@ export const qk = {
   instructor: (id?: string) => ['instructor', id] as const,
   availability: (instructorProfileId?: string) =>
     ['availability', instructorProfileId] as const,
+  // A distinct segment, so this can never collide with a per-instructor key.
+  availabilityAll: () => ['availability', 'all-instructors'] as const,
   appointmentsStudent: (studentProfileId?: string) =>
     ['appointments', 'student', studentProfileId] as const,
   appointmentsInstructor: (instructorProfileId?: string) =>

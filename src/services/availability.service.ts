@@ -15,6 +15,24 @@ export async function listAvailability(
   return (data ?? []) as InstructorAvailability[]
 }
 
+/**
+ * Weekly availability for every instructor, in one request.
+ *
+ * Reading per-instructor would take one round-trip per faculty member to build
+ * a directory-wide summary; this reads the same table (also readable by all
+ * authenticated) and lets the caller group by `instructor_id`.
+ */
+export async function listAllAvailability(): Promise<InstructorAvailability[]> {
+  const { data, error } = await supabase
+    .from('instructor_availability')
+    .select('*')
+    .order('instructor_id', { ascending: true })
+    .order('day_of_week', { ascending: true })
+    .order('start_time', { ascending: true })
+  if (error) throw error
+  return (data ?? []) as InstructorAvailability[]
+}
+
 /** Owner-only (RLS availability_write_owner). */
 export async function addAvailability(input: {
   instructor_id: string
