@@ -3,13 +3,19 @@ import { useProfile } from '../../hooks/useProfile'
 import { useAvailability } from '../../hooks/useInstructors'
 import { useAvailabilityEditor } from '../../hooks/useAvailability'
 import {
+  DepartmentBadge,
   EmptyState,
   Loader,
+  MetricTile,
   PageHeader,
   SectionCard,
 } from '../../components/common'
 import { ClockIcon, PlusIcon, XIcon } from '../../components/common/icons'
-import { DAY_NAMES } from '../../utils/constants'
+import {
+  DAY_NAMES,
+  DEPARTMENT_ACCENT,
+  NO_DEPARTMENT_ACCENT,
+} from '../../utils/constants'
 import { formatTime } from '../../lib/utils'
 import type { InstructorAvailability } from '../../types'
 
@@ -17,7 +23,8 @@ const DAYS = [1, 2, 3, 4, 5, 6, 7]
 
 export default function InstructorSchedule() {
   const { data: fp } = useProfile()
-  const instructorId = fp?.instructor?.id
+  const instructor = fp?.instructor
+  const instructorId = instructor?.id
   const { data: availability, isLoading } = useAvailability(instructorId)
   const { add, remove } = useAvailabilityEditor(instructorId)
 
@@ -37,6 +44,19 @@ export default function InstructorSchedule() {
       arr.sort((a, b) => a.start_time.localeCompare(b.start_time))
     return map
   }, [availability])
+
+  // Header metrics, matching the admin schedule card: only available rows count.
+  const openSlots = useMemo(
+    () => (availability ?? []).filter((s) => s.is_available),
+    [availability],
+  )
+  const activeDays = new Set(openSlots.map((s) => s.day_of_week)).size
+  const totalSlots = openSlots.length
+
+  /** School colour for this instructor's availability bars. */
+  const accent = instructor?.department
+    ? DEPARTMENT_ACCENT[instructor.department]
+    : NO_DEPARTMENT_ACCENT
 
   async function handleAdd() {
     setError(null)
@@ -128,7 +148,17 @@ export default function InstructorSchedule() {
 
         {/* Weekly grid */}
         <div className="lg:col-span-2">
-          <SectionCard title="Weekly schedule">
+          <SectionCard
+            title="Weekly schedule"
+            action={
+              totalSlots > 0 ? (
+                <div className="flex items-center gap-2">
+                  <MetricTile label="Active Days" value={activeDays} />
+                  <MetricTile label="Total Slots" value={totalSlots} />
+                </div>
+              ) : undefined
+            }
+          >
             {isLoading ? (
               <Loader />
             ) : (availability ?? []).length === 0 ? (
@@ -138,29 +168,37 @@ export default function InstructorSchedule() {
                 hint="Add time slots so students can book consultations with you."
               />
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-1">
                 {DAYS.map((d) => {
                   const slots = byDay.get(d) ?? []
+                  const open = slots.length > 0
                   return (
                     <div
                       key={d}
-                      className="flex items-start gap-4 border-b border-slate-100 pb-3 last:border-0 last:pb-0"
+                      className="flex items-center gap-3 border-b border-slate-100 py-2.5 last:border-0"
                     >
-                      <span className="w-24 shrink-0 pt-1 text-sm font-semibold text-slate-700">
+                      {/* Availability at a glance — the school's colour on days
+                          with slots, neutral on days without. */}
+                      <span
+                        className="h-7 w-1 shrink-0 rounded-full"
+                        style={{
+                          background: open ? accent : '#e2e8f0', // slate-200
+                        }}
+                      />
+                      <span className="w-24 shrink-0 text-sm font-semibold text-slate-700">
                         {DAY_NAMES[d]}
                       </span>
-                      <div className="flex flex-1 flex-wrap gap-2">
-                        {slots.length === 0 ? (
-                          <span className="pt-1 text-xs text-slate-400">
-                            No slots
-                          </span>
-                        ) : (
+                      <div className="flex min-w-0 flex-1 flex-wrap gap-1.5">
+                        {open ? (
                           slots.map((s) => (
                             <span
                               key={s.id}
-                              className="inline-flex items-center gap-1.5 rounded-lg bg-brand-50 py-1 pl-2.5 pr-1.5 text-xs font-medium text-brand-700"
+                              className="inline-flex items-center gap-1.5 rounded-md bg-brand-50 py-0.5 pr-1 pl-2 text-xs font-medium text-brand-700"
                             >
-                              {formatTime(s.start_time)}–{formatTime(s.end_time)}
+                              {formatTime(s.start_time)}–
+                              {formatTime(s.end_time)}
+                              {/* Stays here, unlike the admin card's read-only
+                                  pills — this one is the editor. */}
                               <button
                                 onClick={() => remove.mutate(s.id)}
                                 disabled={remove.isPending}
@@ -171,8 +209,17 @@ export default function InstructorSchedule() {
                               </button>
                             </span>
                           ))
+                        ) : (
+                          <span className="text-xs text-slate-400">
+                            Unavailable
+                          </span>
                         )}
                       </div>
+                      {open && (
+                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-sky-100 text-[11px] font-bold tabular-nums text-sky-700">
+                          {slots.length}
+                        </span>
+                      )}
                     </div>
                   )
                 })}

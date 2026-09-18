@@ -85,7 +85,7 @@ h4 {
   background-size: 18px 18px;
 }
 .btn-card {
-  background: linear-gradient(135deg, rgb(13, 27, 75) 0%, rgb(30, 58, 138) 100%);
+  background: linear-gradient(135deg, rgb(13, 27, 75), rgb(45, 79, 196));;
   border: 1.5px solid transparent;
   box-shadow: 0 8px 24px rgba(13, 27, 75, 0.2);
   transition: all 200ms ease-in-out;

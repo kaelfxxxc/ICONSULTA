@@ -6,9 +6,10 @@ import {
 } from '../../hooks/useInstructors'
 import {
   Avatar,
-  Badge,
+  DepartmentBadge,
   EmptyState,
   Loader,
+  MetricTile,
   PageHeader,
   SectionCard,
 } from '../../components/common'
@@ -20,16 +21,9 @@ import {
   NO_DEPARTMENT_ACCENT,
 } from '../../utils/constants'
 import { cn, formatTime } from '../../lib/utils'
-import type { Department, InstructorAvailability } from '../../types'
+import type { InstructorAvailability } from '../../types'
 
 const DAYS = [1, 2, 3, 4, 5, 6, 7]
-
-/** Badge tone per school, matching that school's accent hue. */
-const DEPARTMENT_TONE: Record<Department, 'amber' | 'red' | 'blue'> = {
-  SOB: 'amber', // orange accent
-  SOT: 'red',
-  SOE: 'blue',
-}
 
 export default function AdminSchedule() {
   const { data: instructors, isLoading } = useInstructors()
@@ -197,9 +191,7 @@ export default function AdminSchedule() {
                     {current?.user?.name ?? 'Availability'}
                   </span>
                   {current?.department && (
-                    <Badge tone={DEPARTMENT_TONE[current.department]}>
-                      {current.department}
-                    </Badge>
+                    <DepartmentBadge code={current.department} />
                   )}
                 </span>
               }
@@ -209,8 +201,8 @@ export default function AdminSchedule() {
               action={
                 totalSlots > 0 ? (
                   <div className="flex items-center gap-2">
-                    <Stat label="Active Days" value={activeDays} />
-                    <Stat label="Total Slots" value={totalSlots} />
+                    <MetricTile label="Active Days" value={activeDays} />
+                    <MetricTile label="Total Slots" value={totalSlots} />
                   </div>
                 ) : undefined
               }
@@ -275,20 +267,6 @@ export default function AdminSchedule() {
           </div>
         </div>
       )}
-    </div>
-  )
-}
-
-/** Compact metric tile in the schedule panel header. */
-function Stat({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="rounded-xl bg-slate-50 px-3 py-1.5 text-center">
-      <div className="text-sm leading-none font-black tabular-nums text-slate-800">
-        {value}
-      </div>
-      <div className="mt-1 text-[10px] font-semibold tracking-wide text-slate-500 uppercase">
-        {label}
-      </div>
     </div>
   )
 }
