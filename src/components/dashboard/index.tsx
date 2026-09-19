@@ -113,7 +113,7 @@ export function KpiCard({
     variant === 'violet'
       ? 'border-violet-200 bg-violet-50'
       : variant === 'navy'
-        ? 'border-navy-800 bg-card text-white'
+        ? 'border-slate-600 glass-card font-headcustom'
         : 'border-slate-200 bg-white'
   const labelColor = variant === 'navy' ? 'text-navy-200' : 'text-slate-500'
   const valueColor = variant === 'navy' ? 'text-white' : 'text-slate-900'

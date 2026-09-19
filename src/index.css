@@ -68,6 +68,9 @@ h4 {
   font-family: var(--font-display);
   font-weight: 600;
 }
+.glass-card {
+  background:#ffffff1f;
+}
 .bg-card{
   background: linear-gradient(160deg, rgb(13, 27, 75) 0%, rgb(26, 52, 128) 100%);
 }

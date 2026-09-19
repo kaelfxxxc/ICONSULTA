@@ -57,35 +57,38 @@ export default function InstructorDashboard() {
 
   return (
     <div>
-      <PageHeader
-        title={`Good day, ${firstName} 👋`}
-        subtitle="Here's your consultation activity."
-      >
-        <Link
-          to="/instructor/schedule"
-          className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+      <div className="mb-6 p-6 flex w-full flex-col gap-4 bg-card rounded-2xl">
+        <PageHeader
+          title=''
+          titlewithbg={`Good day, ${firstName} 👋`}
+          subtitle="Here's your consultation activity."
         >
-          <ClockIcon className="h-4 w-4" /> Manage Availability
-        </Link>
-      </PageHeader>
+          <Link
+            to="/instructor/schedule"
+            className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg glass-card border border-slate-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:-translate-y-px hover:border-white/45 hover:bg-white/20 hover:shadow-[0_8px_20px_rgba(5,15,40,0.35)] active:translate-y-0"
+          >
+            <ClockIcon className="h-4 w-4" /> Manage Availability
+          </Link>
+        </PageHeader>
 
-      <div className="mb-6 grid gap-4 sm:grid-cols-3">
-        <KpiCard
-          label="Today's Meetings"
-          value={todayCount}
-          icon={VideoIcon}
-          variant="navy"
-        />
-        <KpiCard
-          label="Pending Requests"
-          value={requests.length}
-          icon={CalendarIcon}
-        />
-        <KpiCard
-          label="Confirmed Upcoming"
-          value={upcoming.length}
-          icon={CheckIcon}
-        />
+        <div className="mb-6 grid gap-4 sm:grid-cols-3">
+          <KpiCard
+            label="Today's Meetings"
+            value={todayCount}
+            icon={VideoIcon}
+            variant="navy"
+          />
+          <KpiCard
+            label="Pending Requests"
+            value={requests.length}
+            icon={CalendarIcon}
+          />
+          <KpiCard
+            label="Confirmed Upcoming"
+            value={upcoming.length}
+            icon={CheckIcon}
+          />
+        </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[13rem_minmax(0,1fr)_16rem]">

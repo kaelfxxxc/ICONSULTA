@@ -4,10 +4,12 @@ import { cn } from '../../lib/utils'
 /** Page title + subtitle with an optional action cluster on the right. */
 export function PageHeader({
   title,
+  titlewithbg,
   subtitle,
   children,
 }: {
   title: string
+  titlewithbg?: string
   subtitle?: string
   children?: ReactNode
 }) {
@@ -16,6 +18,9 @@ export function PageHeader({
       <div>
         <h1 className="text-2xl font-black tracking-tight text-slate-900">
           {title}
+        </h1>
+        <h1 className="text-2xl font-black tracking-tight text-white">
+          {titlewithbg}
         </h1>
         {subtitle && <p className="mt-1 text-sm text-slate-500">{subtitle}</p>}
       </div>
