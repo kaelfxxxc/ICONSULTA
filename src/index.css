@@ -62,6 +62,12 @@ h4 {
 .bg-card{
   background: linear-gradient(160deg, rgb(13, 27, 75) 0%, rgb(26, 52, 128) 100%);
 }
+.bg-card-light{
+  background: linear-gradient(135deg, rgb(13, 27, 75), rgb(45, 79, 196));
+}
+.button-card{
+  background: linear-gradient(135deg, rgb(13, 27, 75), rgb(48, 79, 196));
+}
 .login-shadow{
   box-shadow: 16px 18px 0 rgba(16, 35, 72, 0.035), 0 16px 42px rgba(31, 49, 79, 0.06);
 }

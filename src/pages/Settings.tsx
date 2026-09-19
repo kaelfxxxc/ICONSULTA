@@ -269,7 +269,7 @@ function SettingsForm({ data, role }: { data: FullProfile; role: Role }) {
           <button
             type="submit"
             disabled={update.isPending}
-            className="rounded-lg bg-navy-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-navy-800 disabled:cursor-not-allowed disabled:bg-navy-300"
+            className="rounded-lg button-card px-5 py-2.5 text-sm font-semibold text-white shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:bg-navy-800 hover:shadow-lg hover:brightness-110 active:translate-y-0 disabled:cursor-not-allowed disabled:bg-navy-300 disabled:shadow-none disabled:hover:translate-y-0 disabled:hover:brightness-100"
           >
             {update.isPending ? 'Saving…' : 'Save changes'}
           </button>

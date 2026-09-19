@@ -17,7 +17,7 @@ export function DateBlock({ iso }: { iso: string | null }) {
     : '—'
   const day = d ? d.getDate() : '—'
   return (
-    <div className="hidden h-14 w-14 shrink-0 flex-col items-center justify-center rounded-xl bg-navy-900 text-white sm:flex">
+    <div className="hidden h-14 w-14 shrink-0 flex-col items-center justify-center rounded-xl button-card text-white sm:flex">
       <span className="text-[10px] font-semibold tracking-wide text-navy-200">
         {month}
       </span>

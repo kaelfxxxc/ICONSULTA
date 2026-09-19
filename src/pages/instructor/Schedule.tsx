@@ -3,14 +3,13 @@ import { useProfile } from '../../hooks/useProfile'
 import { useAvailability } from '../../hooks/useInstructors'
 import { useAvailabilityEditor } from '../../hooks/useAvailability'
 import {
-  DepartmentBadge,
   EmptyState,
   Loader,
   MetricTile,
   PageHeader,
   SectionCard,
 } from '../../components/common'
-import { ClockIcon, PlusIcon, XIcon } from '../../components/common/icons'
+import { ClockIcon, XIcon } from '../../components/common/icons'
 import {
   DAY_NAMES,
   DEPARTMENT_ACCENT,
@@ -137,9 +136,8 @@ export default function InstructorSchedule() {
               <button
                 onClick={handleAdd}
                 disabled={add.isPending || !instructorId}
-                className="flex w-full items-center justify-center gap-2 rounded-lg bg-navy-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-navy-800 disabled:cursor-not-allowed disabled:bg-navy-300"
+                className="flex w-full items-center justify-center gap-2 rounded-lg button-card px-4 py-2.5 text-sm font-semibold text-white shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:bg-navy-800 hover:shadow-lg hover:brightness-110 active:translate-y-0 disabled:cursor-not-allowed disabled:bg-navy-300 disabled:shadow-none disabled:hover:translate-y-0 disabled:hover:brightness-100"
               >
-                <PlusIcon className="h-4 w-4" />
                 {add.isPending ? 'Adding…' : 'Add slot'}
               </button>
             </div>

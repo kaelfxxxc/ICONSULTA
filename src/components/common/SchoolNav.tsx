@@ -99,8 +99,8 @@ function SchoolNavItem({
       className={cn(
         'flex w-full items-center gap-2.5 rounded-lg border-l-4 px-3 py-2.5 text-left text-sm font-medium transition',
         active
-          ? 'bg-white text-slate-900 shadow-sm'
-          : 'text-slate-600 hover:bg-white/60 hover:text-slate-900',
+          ? 'bg-white text-slate-900 shadow-sm hover:bg-slate-50 hover:text-slate-900'
+          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100',
       )}
       /*
        * The accent goes inline rather than as a `border-l-[…]` class: cn() is a

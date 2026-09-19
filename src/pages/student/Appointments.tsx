@@ -55,7 +55,7 @@ export default function StudentAppointments() {
       >
         <Link
           to="/student/appointments/new"
-          className="inline-flex items-center gap-2 rounded-lg bg-card px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-navy-800"
+          className="btn-card inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-white "
         >
           <PlusIcon className="h-4 w-4" /> Book New Session
         </Link>
