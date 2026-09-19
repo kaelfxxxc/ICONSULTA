@@ -59,6 +59,15 @@ h4 {
   font-family: var(--font-display);
   font-weight: 800;
 }
+.font-headcustom {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 0.8rem;
+}
+.font-paracustom {
+  font-family: var(--font-display);
+  font-weight: 600;
+}
 .bg-card{
   background: linear-gradient(160deg, rgb(13, 27, 75) 0%, rgb(26, 52, 128) 100%);
 }

@@ -64,12 +64,33 @@ export default function InstructorSchedule() {
       setError('End time must be after the start time.')
       return
     }
+
+    const slotStart = `${start}:00`
+    const slotEnd = `${end}:00`
+    // Only an exact repeat is refused — same weekday, same start, same end.
+    // Anything that merely overlaps is fine, so 10:00–12:00 can still sit
+    // alongside a 10:00–13:00 slot on the same day.
+    const duplicate = (availability ?? []).some(
+      (s) =>
+        s.day_of_week === day &&
+        s.start_time === slotStart &&
+        s.end_time === slotEnd,
+    )
+    if (duplicate) {
+      setError(
+        `${DAY_NAMES[day]} already has a ${formatTime(slotStart)}–${formatTime(
+          slotEnd,
+        )} slot.`,
+      )
+      return
+    }
+
     try {
       await add.mutateAsync({
         instructor_id: instructorId,
         day_of_week: day,
-        start_time: `${start}:00`,
-        end_time: `${end}:00`,
+        start_time: slotStart,
+        end_time: slotEnd,
       })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not add slot.')
@@ -128,6 +149,21 @@ export default function InstructorSchedule() {
                   />
                 </label>
               </div>
+              {/* Read-only preview of the slot about to be added, so the day
+                  and the times read plainly before committing to them. */}
+              <div className="rounded-lg bg-slate-50 px-3 py-2.5">
+                <div className="text-[10px] font-semibold tracking-wide text-slate-500 uppercase">
+                  You are setting
+                </div>
+                <div className="mt-0.5 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                  <span className="text-sm font-semibold text-slate-800">
+                    {DAY_NAMES[day]}
+                  </span>
+                  <span className="text-sm font-bold tabular-nums text-brand-700">
+                    {formatTime(start)} – {formatTime(end)}
+                  </span>
+                </div>
+              </div>
               {error && (
                 <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
                   {error}
@@ -140,23 +176,19 @@ export default function InstructorSchedule() {
               >
                 {add.isPending ? 'Adding…' : 'Add slot'}
               </button>
+              {totalSlots > 0 && (
+                <div className="flex items-center justify-center gap-2 pt-1">
+                  <MetricTile label="Active Days" value={activeDays} />
+                  <MetricTile label="Total Slots" value={totalSlots} />
+                </div>
+              )}
             </div>
           </SectionCard>
         </div>
 
         {/* Weekly grid */}
         <div className="lg:col-span-2">
-          <SectionCard
-            title="Weekly schedule"
-            action={
-              totalSlots > 0 ? (
-                <div className="flex items-center gap-2">
-                  <MetricTile label="Active Days" value={activeDays} />
-                  <MetricTile label="Total Slots" value={totalSlots} />
-                </div>
-              ) : undefined
-            }
-          >
+          <SectionCard title="Weekly schedule">
             {isLoading ? (
               <Loader />
             ) : (availability ?? []).length === 0 ? (
@@ -214,7 +246,7 @@ export default function InstructorSchedule() {
                         )}
                       </div>
                       {open && (
-                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-sky-100 text-[11px] font-bold tabular-nums text-sky-700">
+                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-800 text-[11px] font-bold tabular-nums text-white">
                           {slots.length}
                         </span>
                       )}
