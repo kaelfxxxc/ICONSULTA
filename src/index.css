@@ -5,6 +5,7 @@
 /* Indigo/periwinkle (brand-*) = selection accent + "blue" status.               */
 /* Violet (Tailwind built-in) = AI features. emerald/amber/red = semantics.      */
 @theme {
+  --breakpoint-xs: 412px;
   /* Deep navy scale */
   --color-navy-50: #eef2fb;
   --color-navy-100: #d9e1f4;

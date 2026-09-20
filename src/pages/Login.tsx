@@ -138,9 +138,9 @@ export default function Login({ variant = 'default' }: { variant?: 'default' | '
         </section>
 
         {/* Login card */}
-        <section className="flex items-center justify-center">
+        <section className="flex items-center justify-center m-1">
           <div className="w-full max-w-md">
-            <div className="animate-rise relative rounded-[28px] rounded-tl-md border border-slate-200/80 bg-white p-6 login-shadow mobile-shadow sm:p-8">
+            <div className="animate-rise relative rounded-[28px] rounded-tl-md border border-slate-200/80 bg-white p-5 login-shadow mobile-shadow sm:p-8">
               {/* Small navy accent tab riding the top-left edge. */}
               <span className="absolute left-7 top-0 h-1 w-12 -translate-y-1/2 rounded-full bg-navy-900" />
 
@@ -188,7 +188,7 @@ export default function Login({ variant = 'default' }: { variant?: 'default' | '
 
               {/* Role cards — the picker drives sign-up; sign-in reads role from the DB. */}
               {!isAdminPortal && (
-                <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-2">
                   {(
                     [
                       {
@@ -212,30 +212,32 @@ export default function Login({ variant = 'default' }: { variant?: 'default' | '
                         type="button"
                         onClick={() => setRole(r.key)}
                         className={cn(
-                          'relative flex items-start gap-3 rounded-2xl border p-3.5 text-left transition',
+                          'relative flex items-start rounded-2xl border p-3.5 text-left transition',
                           selected
                             ? 'border-navy-900 bg-navy-50'
-                            : 'border-slate-200 hover:border-slate-300',
+                            : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50',
                         )}
                       >
-                        <span
-                          className={cn(
-                            'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border',
-                            selected
-                              ? 'border-navy-200 bg-white text-navy-900'
-                              : 'border-slate-200 bg-slate-50 text-slate-500',
-                          )}
-                        >
-                          <r.icon className="h-4 w-4" />
-                        </span>
-                        <span className="min-w-0">
-                          <span className="block text-sm font-semibold text-slate-900">
-                            {r.label}
+                        <div className="flex items-start flex-col xs:flex-row gap-0.5 xs:gap-3 text-left transition">
+                          <span
+                            className={cn(
+                              'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border',
+                              selected
+                                ? 'border-navy-200 bg-white text-navy-900'
+                                : 'border-slate-200 bg-slate-50 text-slate-500',
+                            )}
+                          >
+                            <r.icon className="h-4 w-4" />
                           </span>
-                          <span className="block text-xs text-slate-500">
-                            {r.sub}
+                          <span className="min-w-0">
+                            <span className="block text-sm font-semibold text-slate-900">
+                              {r.label}
+                            </span>
+                            <span className="block text-xs text-slate-500">
+                              {r.sub}
+                            </span>
                           </span>
-                        </span>
+                        </div>  
                         <span
                           className={cn(
                             'absolute right-3 top-3 flex h-4 w-4 items-center justify-center rounded-full border',
