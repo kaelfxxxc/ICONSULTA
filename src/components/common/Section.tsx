@@ -14,12 +14,12 @@ export function PageHeader({
   children?: ReactNode
 }) {
   return (
-    <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
-      <div>
-        <h1 className="text-2xl font-black tracking-tight text-slate-900">
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="min-w-0 items-center gap-2">
+        <h1 className="text-lg xs:text-2xl font-black tracking-tight text-slate-900">
           {title}
         </h1>
-        <h1 className="text-2xl font-black tracking-tight text-white">
+        <h1 className="text-lg xs:text-2xl font-black tracking-tight text-white">
           {titlewithbg}
         </h1>
         {subtitle && <p className="mt-1 text-sm text-slate-500">{subtitle}</p>}

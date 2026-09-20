@@ -118,9 +118,8 @@ export function KpiCard({
   const labelColor = variant === 'navy' ? 'text-navy-200' : 'text-slate-500'
   const valueColor = variant === 'navy' ? 'text-white' : 'text-slate-900'
   return (
-    <div className={cn('rounded-2xl border p-5 shadow-sm', shell)}>
-      <div className="flex items-center justify-between">
-        <span className={cn('text-sm font-medium', labelColor)}>{label}</span>
+    <div className={cn('rounded-2xl border px-2 pt-5 pb-3 xs:px-5 shadow-sm', shell)}>
+      <div className="flex items-center gap-2 flex-col sm:flex-row sm:items-start">
         {Icon && (
           <span
             className={cn(
@@ -130,8 +129,9 @@ export function KpiCard({
             <Icon className="h-5 w-5" />
           </span>
         )}
+        <span className={cn('text-[11px] font-medium xs:text-[12px] text-center sm:text-start sm:text-sm', labelColor)}>{label}</span>
       </div>
-      <div className={cn('mt-3 text-3xl font-bold tracking-tight', valueColor)}>
+      <div className={cn('mt-3 text-3xl font-bold tracking-tight text-center sm:text-start', valueColor)}>
         {value}
       </div>
       {delta && (

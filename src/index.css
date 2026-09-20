@@ -58,12 +58,11 @@ h2,
 h3,
 h4 {
   font-family: var(--font-display);
-  font-weight: 800;
+  font-weight: 700;
 }
 .font-headcustom {
   font-family: var(--font-display);
-  font-weight: 800;
-  font-size: 0.8rem;
+  font-weight: 700;
 }
 .font-paracustom {
   font-family: var(--font-display);
@@ -80,6 +79,9 @@ h4 {
 }
 .button-card{
   background: linear-gradient(135deg, rgb(13, 27, 75), rgb(48, 79, 196));
+}
+.bg-header{
+  background: linear-gradient(135deg, rgb(13, 27, 75) 0%, #1a3275 100%);
 }
 .login-shadow{
   box-shadow: 16px 18px 0 rgba(16, 35, 72, 0.035), 0 16px 42px rgba(31, 49, 79, 0.06);

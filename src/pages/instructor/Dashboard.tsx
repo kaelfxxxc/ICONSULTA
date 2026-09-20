@@ -57,7 +57,7 @@ export default function InstructorDashboard() {
 
   return (
     <div>
-      <div className="mb-6 p-6 flex w-full flex-col gap-4 bg-card rounded-2xl">
+      <div className="mb-6 px-6 py-4 flex w-full flex-col gap-4 bg-header rounded-2xl">
         <PageHeader
           title=''
           titlewithbg={`Good day, ${firstName} 👋`}
@@ -65,13 +65,13 @@ export default function InstructorDashboard() {
         >
           <Link
             to="/instructor/schedule"
-            className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg glass-card border border-slate-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:-translate-y-px hover:border-white/45 hover:bg-white/20 hover:shadow-[0_8px_20px_rgba(5,15,40,0.35)] active:translate-y-0"
+            className="inline-flex w-full items-center gap-2 rounded-2xl glass-card border border-white/45 px-4 py-2.5 text-sm font-semibold text-white transition hover:-translate-y-px hover:border-white/45 hover:bg-white/20 hover:shadow-[0_8px_20px_rgba(5,15,40,0.35)] active:translate-y-0"
           >
             <ClockIcon className="h-4 w-4" /> Manage Availability
           </Link>
         </PageHeader>
 
-        <div className="mb-6 grid gap-4 sm:grid-cols-3">
+        <div className="pt-3 grid gap-4 grid-cols-3 border-t border-slate-600">
           <KpiCard
             label="Today's Meetings"
             value={todayCount}
@@ -214,6 +214,12 @@ export default function InstructorDashboard() {
                 </div>
               ))
             )}
+            <Link
+              to="/instructor/history"
+              className="link-more mt-4 flex items-center justify-center gap-1.5"
+            >
+              View History →
+            </Link>
           </SectionCard>
         </div>
       </div>
@@ -282,7 +288,7 @@ function WeeklyAvailability({ slots }: { slots: InstructorAvailability[] }) {
                   daySlots.length === 0 ? 'text-slate-300' : 'text-slate-500',
                 )}
               >
-                {DAY_NAMES[d].slice(0, 3)}
+                {DAY_NAMES[d]}
               </span>
               {daySlots.length === 0 && (
                 <span className="text-xs text-slate-300">—</span>
