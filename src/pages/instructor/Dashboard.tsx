@@ -76,7 +76,7 @@ export default function InstructorDashboard() {
             label="Today's Meetings"
             value={todayCount}
             icon={VideoIcon}
-            variant="navy"
+            variant="glass"
           />
           <KpiCard
             label="Pending Requests"

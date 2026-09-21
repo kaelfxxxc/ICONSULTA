@@ -6,6 +6,7 @@ import { ROLE_HOME, DEPARTMENTS } from '../utils/constants'
 import { cn } from '../lib/utils'
 import {
   ArrowUpRightIcon,
+  ArrowRightIcon,
   BookOpenIcon,
   CheckIcon,
   ChevronDownIcon,
@@ -375,7 +376,7 @@ export default function Login({ variant = 'default' }: { variant?: 'default' | '
                     {ctaLabel}
                   </span>
                   <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/15">
-                    <ArrowUpRightIcon className="h-4 w-4" />
+                    <ArrowRightIcon className="h-4 w-4" />
                   </span>
                 </button>
               </form>

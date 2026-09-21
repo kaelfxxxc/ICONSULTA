@@ -107,23 +107,32 @@ export function KpiCard({
   delta?: string
   deltaTone?: 'up' | 'down' | 'muted'
   icon?: IconType
-  variant?: 'default' | 'violet' | 'navy'
+  variant?: 'default' | 'violet' | 'navy' | 'glass'
 }) {
+  /**
+   * `navy` and `glass` share the same light type; only the surface differs —
+   * navy is a solid navy fill, glass is the translucent `glass-card` wash that
+   * needs a dark backdrop behind it to read.
+   */
+  const dark = variant === 'navy' || variant === 'glass'
   const shell =
     variant === 'violet'
       ? 'border-violet-200 bg-violet-50'
       : variant === 'navy'
-        ? 'border-slate-600 glass-card font-headcustom'
-        : 'border-slate-200 bg-white'
-  const labelColor = variant === 'navy' ? 'text-navy-200' : 'text-slate-500'
-  const valueColor = variant === 'navy' ? 'text-white' : 'text-slate-900'
+        ? 'border-slate-600 bg-navy-900 font-headcustom'
+        : variant === 'glass'
+          ? 'border-slate-600 glass-card font-headcustom'
+          : 'border-slate-200 bg-white'
+  const labelColor = dark ? 'text-navy-200' : 'text-slate-500'
+  const valueColor = dark ? 'text-white' : 'text-slate-900'
   return (
     <div className={cn('rounded-2xl border px-2 pt-5 pb-3 xs:px-5 shadow-sm', shell)}>
       <div className="flex items-center gap-2 flex-col sm:flex-row sm:items-start">
         {Icon && (
           <span
             className={cn(
-              variant === 'navy' ? 'text-navy-300' : 'text-slate-300',
+              'hidden xs:block',
+              dark ? 'text-navy-300' : 'text-slate-300',
             )}
           >
             <Icon className="h-5 w-5" />
@@ -137,11 +146,11 @@ export function KpiCard({
       {delta && (
         <div
           className={cn(
-            'mt-1 text-xs font-medium',
+            'mt-1 text-xs font-medium text-center sm:text-start',
             deltaTone === 'up' && 'text-emerald-600',
             deltaTone === 'down' && 'text-red-600',
             deltaTone === 'muted' &&
-              (variant === 'navy' ? 'text-navy-300' : 'text-slate-500'),
+              (dark ? 'text-navy-300' : 'text-slate-500'),
           )}
         >
           {delta}

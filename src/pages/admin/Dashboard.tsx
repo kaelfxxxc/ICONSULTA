@@ -27,7 +27,7 @@ function LivePill({ status }: { status: LiveStatus }) {
   const label = live ? 'Live' : connecting ? 'Connecting…' : 'Reconnecting'
 
   return (
-    <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700">
+    <span className="inline-flex items-center gap-2 rounded-[10px] border border-emerald-500/30 bg-emerald-500/10 backdrop-blur px-3 py-1.5 text-xs font-semibold text-emerald-400">
       <span
         className={`h-2 w-2 rounded-full ${dot} ${live ? 'animate-pulse' : ''}`}
       />
@@ -46,37 +46,40 @@ export default function AdminDashboard() {
 
   return (
     <div>
-      <PageHeader
-        title="Admin Dashboard"
-        subtitle="System overview and key metrics."
-      >
-        <div className="flex flex-wrap items-center gap-2">
-          <LivePill status={liveStatus} />
-          <Link
-            to="/admin/analytics"
-            className="inline-flex items-center gap-2 rounded-lg bg-navy-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-navy-800"
-          >
-            <BarChartIcon className="h-4 w-4" /> Full Analytics
-          </Link>
-        </div>
-      </PageHeader>
+      <div className="mb-6 px-6 py-4 flex w-full flex-col gap-4 bg-header rounded-2xl">
+        <PageHeader
+          title=''
+          titlewithbg="Admin Dashboard"
+          subtitle="System overview and key metrics."
+        >
+          <div className="flex flex-wrap items-center gap-2">
+            <LivePill status={liveStatus} />
+            <Link
+              to="/admin/analytics"
+              className="inline-flex items-center gap-2 rounded-2xl glass-card border border-white/45 px-4 py-2.5 text-sm font-semibold text-white transition hover:-translate-y-px hover:border-white/45 hover:bg-white/20 hover:shadow-[0_8px_20px_rgba(5,15,40,0.35)] active:translate-y-0"
+            >
+              <BarChartIcon className="h-4 w-4" /> Full Analytics
+            </Link>
+          </div>
+        </PageHeader>
 
-      <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <KpiCard
-          label="Total Users"
-          value={userCounts.total}
-          icon={UsersIcon}
-          delta={`${userCounts.active} active`}
-          deltaTone="up"
-        />
-        <KpiCard label="Students" value={userCounts.students} />
-        <KpiCard label="Instructors" value={userCounts.instructors} />
-        <KpiCard
-          label="Appointments (MTD)"
-          value={totalAppointments}
-          variant="navy"
-          delta={`${completionRate.toFixed(1)}% completion`}
-        />
+        <div className="pt-3 grid gap-4 grid-cols-2 border-t border-slate-600 lg:grid-cols-4">
+          <KpiCard
+            label="Total Users"
+            value={userCounts.total}
+            icon={UsersIcon}
+            delta={`${userCounts.active} active`}
+            deltaTone="up"
+          />
+          <KpiCard label="Students" value={userCounts.students} />
+          <KpiCard label="Instructors" value={userCounts.instructors} />
+          <KpiCard
+            label="Appointments (MTD)"
+            value={totalAppointments}
+            variant="glass"
+            delta={`${completionRate.toFixed(1)}% completion`}
+          />
+        </div>
       </div>
 
       {/*
