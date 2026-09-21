@@ -146,7 +146,7 @@ export function KpiCard({
       {delta && (
         <div
           className={cn(
-            'mt-1 text-xs font-medium text-center sm:text-start',
+            'hidden sm:block mt-1 text-xs font-medium text-center sm:text-start',
             deltaTone === 'up' && 'text-emerald-600',
             deltaTone === 'down' && 'text-red-600',
             deltaTone === 'muted' &&

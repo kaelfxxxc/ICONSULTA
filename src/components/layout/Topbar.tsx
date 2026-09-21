@@ -76,7 +76,7 @@ export function Topbar({
           <button
             type="button"
             onClick={() => setMenuOpen((v) => !v)}
-            className="flex items-center gap-2 rounded-xl border border-slate-200 py-1 pl-1 pr-2 transition hover:bg-white"
+            className="flex items-center gap-2 rounded-xl py-1 pl-1 pr-2 transition hover:bg-white"
           >
             <Avatar name={profile?.name} size="sm" />
             <span className="hidden text-left sm:block">

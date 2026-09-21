@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/authContext'
 import { useProfile } from '../../hooks/useProfile'
+import { KpiCard } from '../../components/dashboard'
 import { useStudentAppointments } from '../../hooks/useAppointments'
 import { useInstructors } from '../../hooks/useInstructors'
 import {
@@ -38,16 +39,28 @@ export default function StudentDashboard() {
 
   const [openSummary, setOpenSummary] = useState<string | null>(null)
 
-  const { upcoming, recent } = useMemo(() => {
+  const { upcoming, recent, stats } = useMemo(() => {
     const list = appts ?? []
+    const completed = list.filter((a) => a.status === 'completed').length
+    const upcomingList = list.filter((a) =>
+      ['pending', 'approved'].includes(a.status),
+    )
     return {
-      upcoming: list.filter((a) =>
-        ['pending', 'approved'].includes(a.status),
-      ),
+      upcoming: upcomingList,
       recent: list
         .filter((a) => a.status === 'completed')
         .slice(-4)
         .reverse(),
+      stats: {
+        upcoming: upcomingList.length,
+        completed,
+        cancelled: list.filter((a) =>
+          ['cancelled', 'rejected'].includes(a.status),
+        ).length,
+        completionRate: list.length
+          ? Math.round((completed / list.length) * 100)
+          : 0,
+      },
     }
   }, [appts])
 
@@ -55,11 +68,36 @@ export default function StudentDashboard() {
 
   return (
     <div>
-      <PageHeader
-        title={`Welcome back, ${firstName} 👋`}
-        subtitle="Here's what's happening with your consultations."
-      >
-      </PageHeader>
+      <div className="mb-6 px-6 py-4 flex w-full justify-between gap-4 bg-header rounded-2xl">
+        <div className="flex w-full flex-col gap-4">
+          <PageHeader
+            title=''
+            titlewithbg={`Welcome back, ${firstName} 👋`}
+            subtitle="Here's what's happening with your consultations."
+          >
+            <Link
+              to="/student/appointments/new"
+              className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#ffffff1f] border border-slate-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:-translate-y-px hover:border-white/45 hover:bg-white/20 hover:shadow-[0_8px_20px_rgba(5,15,40,0.35)] active:translate-y-0"
+            >
+              Book New Session
+            </Link>
+          </PageHeader>
+          <div className="pt-3 grid gap-4 grid-cols-3 border-t border-slate-600">
+            <KpiCard label="Upcoming" value={stats.upcoming} variant="glass" />
+            <KpiCard
+              label="Completed"
+              value={stats.completed}
+              delta={`${stats.completionRate}% completion rate`}
+              deltaTone="up"
+            />
+            <KpiCard
+              label="Cancelled / Rejected"
+              value={stats.cancelled}
+              deltaTone="muted"
+            />
+          </div>
+        </div>
+      </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Main column */}
@@ -121,7 +159,48 @@ export default function StudentDashboard() {
               ))
             )}
           </SectionCard>
+          <SectionCard title="Recent Activity" bodyClassName="space-y-2">
+            {recent.length === 0 ? (
+              <p className="py-4 text-center text-sm text-slate-500">
+                No completed sessions yet.
+              </p>
+            ) : (
+              recent.map((a) => (
+                <div key={a.id}>
+                  <div className="flex items-start justify-between gap-3 rounded-xl border border-slate-100 p-3">
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-medium text-slate-800">
+                        {a.reason ?? 'Consultation'}
+                      </div>
+                      <div className="truncate text-xs text-slate-500">
+                        {a.instructor?.user?.name} · {formatDate(a.scheduled_at)}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() =>
+                        setOpenSummary(openSummary === a.id ? null : a.id)
+                      }
+                      className="inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-violet-600 ring-1 ring-violet-200 transition hover:bg-violet-50"
+                    >
+                      <SparklesIcon className="h-4 w-4" /> Summary
+                    </button>
+                  </div>
+                  {openSummary === a.id && (
+                    <AiSummaryPanel
+                      className="mt-2"
+                      summary={a.summary?.summary}
+                      pending={!a.summary?.summary}
+                    />
+                  )}
+                </div>
+              ))
+            )}
+          </SectionCard>
+        </div>
 
+        {/* Aside */}
+        <div className="space-y-6">
+          
           {/* Faculty directory */}
           <SectionCard
             title="Faculty Directory"
@@ -153,7 +232,7 @@ export default function StudentDashboard() {
               ))}
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-1">
               {(instructors ?? []).slice(0, 6).map((i) => (
                 <Link
                   key={i.id}
@@ -183,66 +262,6 @@ export default function StudentDashboard() {
                 </p>
               )}
             </div>
-          </SectionCard>
-        </div>
-
-        {/* Aside */}
-        <div className="space-y-6">
-          {/* Quick action navy card */}
-          <div className="rounded-2xl bg-card p-6 text-white shadow-sm">
-            {/*<span className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/10">
-              <SparklesIcon className="h-6 w-6" />
-            </span>*/}
-            <h3 className="mt-4 text-lg font-bold">Need help with a course?</h3>
-            <p className="mt-1 text-sm text-navy-200">
-              Book a one-on-one video consultation with your instructor in a few
-              clicks.
-            </p>
-            <Link
-              to="/student/appointments/new"
-              className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#ffffff1f] border border-slate-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:-translate-y-px hover:border-white/45 hover:bg-white/20 hover:shadow-[0_8px_20px_rgba(5,15,40,0.35)] active:translate-y-0"
-            >
-               Book New Session
-            </Link>
-          </div>
-
-          <SectionCard title="Recent Activity" bodyClassName="space-y-2">
-            {recent.length === 0 ? (
-              <p className="py-4 text-center text-sm text-slate-500">
-                No completed sessions yet.
-              </p>
-            ) : (
-              recent.map((a) => (
-                <div key={a.id} className="rounded-xl border border-slate-100 p-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <div className="truncate text-sm font-medium text-slate-800">
-                        {a.reason ?? 'Consultation'}
-                      </div>
-                      <div className="truncate text-xs text-slate-500">
-                        {a.instructor?.user?.name} · {formatDate(a.scheduled_at)}
-                      </div>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() =>
-                      setOpenSummary(openSummary === a.id ? null : a.id)
-                    }
-                    className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-violet-600 hover:text-violet-700"
-                  >
-                    <SparklesIcon className="h-3.5 w-3.5" />
-                    {openSummary === a.id ? 'Hide summary' : 'View AI Summary'}
-                  </button>
-                  {openSummary === a.id && (
-                    <AiSummaryPanel
-                      className="mt-2"
-                      summary={a.summary?.summary}
-                      pending={!a.summary?.summary}
-                    />
-                  )}
-                </div>
-              ))
-            )}
           </SectionCard>
         </div>
       </div>
