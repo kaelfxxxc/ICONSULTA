@@ -59,42 +59,50 @@ function ConsultationCard({
   const name = appointment.student?.user?.name ?? 'Student'
 
   return (
-    <SectionCard title="History" bodyClassName="space-y-4 p-2">
-      <button
-        type="button"
-        onClick={onSelect}
-        aria-current={selected ? 'true' : undefined}
-        className={cn(
-          'flex w-full items-start gap-3 rounded-xl border p-3 text-left transition',
-          selected
-            ? 'bg-card'
-            : 'border-slate-200 bg-white hover:border-[#cbd6e8] hover:bg-slate-50',
-        )}
-      >
-        <span className="flex min-w-0 flex-1 flex-col gap-1">
-          <div className="flex flex-row gap-3">
-            <Avatar name={name} size="sm" />
-            <div className="flex flex-col">
-              <span className="truncate text-sm font-semibold text-slate-50">
-                {appointment.reason ?? 'Consultation'}
-              </span>
-              <span className="truncate text-xs text-slate-400">
-                {name}
-                {appointment.student?.department
-                  ? ` · ${DEPARTMENT_LABEL[appointment.student.department]}`
-                  : ''}
-              </span>
-            </div>
-          </div>
-          <span className="flex flex-wrap items-center gap-1.5 justify-between">
-            <span className="text-[11px] text-slate-400">
-              {formatDateTime(appointment.scheduled_at)}
+    <button
+      type="button"
+      onClick={onSelect}
+      aria-current={selected ? 'true' : undefined}
+      className={cn(
+        'flex w-full items-start gap-3 rounded-xl border p-3 text-left transition',
+        selected
+          ? 'bg-card border-slate-700'
+          : 'border-slate-200 bg-white hover:border-[#cbd6e8] hover:bg-slate-50',
+      )}
+    >
+      <span className="flex min-w-0 flex-1 flex-col gap-1">
+        <div className="flex flex-row gap-3">
+          <Avatar name={name} size="sm" />
+          <div className="flex flex-col">
+            <span
+              className={cn(
+                'truncate text-sm font-semibold',
+                selected ? 'text-slate-50' : 'text-slate-900',
+              )}
+            >
+              {appointment.reason ?? 'Consultation'}
             </span>
-            <Badge tone={RESOLUTION_TONE[resolution]}>{resolution}</Badge>
+            <span
+              className={cn(
+                'truncate text-xs',
+                selected ? 'text-slate-300' : 'text-slate-500',
+              )}
+            >
+              {name}
+              {appointment.student?.department
+                ? ` · ${DEPARTMENT_LABEL[appointment.student.department]}`
+                : ''}
+            </span>
+          </div>
+        </div>
+        <span className="flex flex-wrap items-center gap-1.5 justify-between">
+          <span className={cn('text-[11px]', selected ? 'text-slate-300' : 'text-slate-500')}>
+            {formatDateTime(appointment.scheduled_at)}
           </span>
+          <Badge tone={RESOLUTION_TONE[resolution]}>{resolution}</Badge>
         </span>
-      </button>
-    </SectionCard>
+      </span>
+    </button>
   )
 }
 
@@ -160,23 +168,13 @@ function ConsultationDetail({
         </div>
       </SectionCard>
 
-      <SectionCard title="Transcript">
+      <SectionCard 
+        title="AI-Generated Summary"
+      >
         <AiSummaryPanel
           summary={appointment.summary?.summary}
           pending={!appointment.summary?.summary}
         />
-        {appointment.summary?.transcript ? (
-          <details className="mt-3 rounded-xl border border-slate-200 p-3">
-            <summary className="cursor-pointer text-sm font-medium text-slate-700">
-              View transcript
-            </summary>
-            <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-slate-600">
-              {appointment.summary.transcript}
-            </p>
-          </details>
-        ) : (
-          <p></p>
-        )}
       </SectionCard>
     </div>
   )
@@ -247,29 +245,29 @@ export default function InstructorHistory() {
 
           {isLoading ? (
             <Loader />
-          ) : completed.length === 0 ? (
-            <SectionCard>
-              <EmptyState
-                icon={HistoryIcon}
-                title={search ? 'No matches' : 'No past sessions'}
-                hint={
-                  search
-                    ? 'Try a different student or topic.'
-                    : 'Completed consultations and summaries will appear here.'
-                }
-              />
-            </SectionCard>
           ) : (
-            <div className="space-y-2">
-              {completed.map((a) => (
-                <ConsultationCard
-                  key={a.id}
-                  appointment={a}
-                  selected={selected?.id === a.id}
-                  onSelect={() => handleSelect(a.id)}
+            <SectionCard title="History" bodyClassName="space-y-2 p-2">
+              {completed.length === 0 ? (
+                <EmptyState
+                  icon={HistoryIcon}
+                  title={search ? 'No matches' : 'No past sessions'}
+                  hint={
+                    search
+                      ? 'Try a different student or topic.'
+                      : 'Completed consultations and summaries will appear here.'
+                  }
                 />
-              ))}
-            </div>
+              ) : (
+                completed.map((a) => (
+                  <ConsultationCard
+                    key={a.id}
+                    appointment={a}
+                    selected={selected?.id === a.id}
+                    onSelect={() => handleSelect(a.id)}
+                  />
+                ))
+              )}
+            </SectionCard>
           )}
         </div>
 
