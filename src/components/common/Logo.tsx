@@ -38,7 +38,7 @@ export function LogoMark({
 }
 
 /**
- * The full horizontal lockup — mark, wordmark and tagline. Use it where there is
+ * The full horizontal lo ckup — mark, wordmark and tagline. Use it where there is
  * room to read the tagline; it replaces the text wordmark, so it carries a real
  * `alt` and should not sit beside a repeated "ICONSULTA".
  *

@@ -10,7 +10,7 @@ export function Brand({ compact: _compact = false }: { compact?: boolean }) {
     <div className="flex items-center gap-2.5">
       {/* The mark carries its own light ground, so it needs a ring rather than a
           filled badge to read as a tile against the white sidebar. */}
-      <LogoMark className="h-auto w-auto py-3" />
+      <LogoMark className="h-auto w-auto py-0.5" />
     </div>
   )
 }

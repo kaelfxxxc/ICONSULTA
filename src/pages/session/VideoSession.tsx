@@ -47,7 +47,7 @@ export default function VideoSession() {
   const ended = appt?.status === 'completed'
 
   // Real camera/mic + peer connection. Signaling rides Supabase Realtime on a
-  // channel keyed by the appointment, so both parties meet in the same room.
+  // channel keyed by   the appointment, so both parties meet in the same room.
   const {
     phase,
     mediaError,
@@ -107,7 +107,7 @@ export default function VideoSession() {
   return (
     <div className="flex h-full flex-col bg-navy-950 text-white">
       {/* Slim topbar */}
-      <header className="flex h-14 shrink-0 items-center justify-between border-b border-white/10 px-4">
+      <header className="flex min-h-14 shrink-0 items-center justify-between border-b border-white/10 px-4">
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate(home)}
@@ -116,17 +116,22 @@ export default function VideoSession() {
           >
             <ChevronLeftIcon className="h-5 w-5" />
           </button>
-          <Brand compact />
+          {/* The mark carries no size of its own, and `max-w-full` resolves against
+              this box — so the width here is what actually scales the logo down
+              from its 500px natural width to fit the slim topbar. */}
+          <div className="w-40 xs:w-70 shrink-0 bg-slate-50 rounded-2xl m-2 px-2">
+            <Brand compact />
+          </div>
+        </div>
+        <div className="flex items-center gap-8">
           <div className="hidden sm:block">
-            <div className="text-sm font-semibold">
+            <div className="text-sm font-semibold text-center">
               {appt?.reason ?? 'Consultation'}
             </div>
             <div className="text-xs text-white/50">with {counterpartName}</div>
           </div>
-        </div>
-        <div className="flex items-center gap-2">
           {!ended ? (
-            <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs font-medium">
+            <span className="inline-flex items-center gap-2 rounded-full bg-white/10 text-slate-950 px-3 py-1.5 text-xs font-medium">
               <span
                 className={cn(
                   'h-2 w-2 rounded-full',
