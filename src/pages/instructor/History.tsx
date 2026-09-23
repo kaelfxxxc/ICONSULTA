@@ -59,36 +59,42 @@ function ConsultationCard({
   const name = appointment.student?.user?.name ?? 'Student'
 
   return (
-    <button
-      type="button"
-      onClick={onSelect}
-      aria-current={selected ? 'true' : undefined}
-      className={cn(
-        'flex w-full items-start gap-3 rounded-xl border p-3 text-left transition',
-        selected
-          ? 'border-brand-300 bg-brand-50/70'
-          : 'border-slate-200 bg-white hover:border-[#cbd6e8] hover:bg-slate-50',
-      )}
-    >
-      <Avatar name={name} size="sm" />
-      <span className="flex min-w-0 flex-1 flex-col gap-1">
-        <span className="truncate text-sm font-semibold text-slate-800">
-          {appointment.reason ?? 'Consultation'}
-        </span>
-        <span className="truncate text-xs text-slate-500">
-          {name}
-          {appointment.student?.department
-            ? ` · ${DEPARTMENT_LABEL[appointment.student.department]}`
-            : ''}
-        </span>
-        <span className="flex flex-wrap items-center gap-1.5">
-          <Badge tone={RESOLUTION_TONE[resolution]}>{resolution}</Badge>
-          <span className="text-[11px] text-slate-400">
-            {formatDateTime(appointment.scheduled_at)}
+    <SectionCard title="History" bodyClassName="space-y-4 p-2">
+      <button
+        type="button"
+        onClick={onSelect}
+        aria-current={selected ? 'true' : undefined}
+        className={cn(
+          'flex w-full items-start gap-3 rounded-xl border p-3 text-left transition',
+          selected
+            ? 'bg-card'
+            : 'border-slate-200 bg-white hover:border-[#cbd6e8] hover:bg-slate-50',
+        )}
+      >
+        <span className="flex min-w-0 flex-1 flex-col gap-1">
+          <div className="flex flex-row gap-3">
+            <Avatar name={name} size="sm" />
+            <div className="flex flex-col">
+              <span className="truncate text-sm font-semibold text-slate-50">
+                {appointment.reason ?? 'Consultation'}
+              </span>
+              <span className="truncate text-xs text-slate-400">
+                {name}
+                {appointment.student?.department
+                  ? ` · ${DEPARTMENT_LABEL[appointment.student.department]}`
+                  : ''}
+              </span>
+            </div>
+          </div>
+          <span className="flex flex-wrap items-center gap-1.5 justify-between">
+            <span className="text-[11px] text-slate-400">
+              {formatDateTime(appointment.scheduled_at)}
+            </span>
+            <Badge tone={RESOLUTION_TONE[resolution]}>{resolution}</Badge>
           </span>
         </span>
-      </span>
-    </button>
+      </button>
+    </SectionCard>
   )
 }
 
@@ -127,7 +133,7 @@ function ConsultationDetail({
   return (
     <div className="space-y-4">
       <SectionCard>
-        <div className="flex flex-wrap items-start gap-4">
+        <div className="flex flex-wrap items-center gap-4">
           <Avatar name={name} size="lg" />
           <div className="min-w-0 flex-1">
             <h2 className="truncate text-lg font-bold tracking-tight text-slate-900">
@@ -136,11 +142,6 @@ function ConsultationDetail({
             <p className="mt-0.5 truncate text-sm text-slate-500">{name}</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            {/* Read-only for now — `useUpdateResolution` is already wired if this
-                ever needs to become editable. */}
-            <Badge tone={statusTone(appointment.status)}>
-              {statusLabel(appointment.status)}
-            </Badge>
             <Badge tone={RESOLUTION_TONE[resolution]}>{resolution}</Badge>
           </div>
         </div>
@@ -174,9 +175,7 @@ function ConsultationDetail({
             </p>
           </details>
         ) : (
-          <p className="mt-3 text-sm text-slate-500">
-            No transcript for this consultation.
-          </p>
+          <p></p>
         )}
       </SectionCard>
     </div>
