@@ -108,7 +108,7 @@ export default function VideoSession() {
     <div className="flex h-full flex-col bg-navy-950 text-white">
       {/* Slim topbar */}
       <header className="flex min-h-14 shrink-0 items-center justify-between border-b border-white/10 px-4">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1 sm:gap-3">
           <button
             onClick={() => navigate(home)}
             className="flex h-9 w-9 items-center justify-center rounded-lg text-white/70 transition hover:bg-white/10"
@@ -119,12 +119,12 @@ export default function VideoSession() {
           {/* The mark carries no size of its own, and `max-w-full` resolves against
               this box — so the width here is what actually scales the logo down
               from its 500px natural width to fit the slim topbar. */}
-          <div className="w-40 xs:w-70 shrink-0 bg-slate-50 rounded-2xl m-2 px-2">
+          <div className="w-40 sm:w-70 xs:w-50 shrink-0 bg-slate-50 rounded-[10px] sm:rounded-2xl m-2 px-2">
             <Brand compact />
           </div>
         </div>
         <div className="flex items-center gap-8">
-          <div className="hidden sm:block">
+          <div className="hidden md:block">
             <div className="text-sm font-semibold text-center">
               {appt?.reason ?? 'Consultation'}
             </div>
@@ -184,7 +184,7 @@ export default function VideoSession() {
           </div>
 
           {/* Control bar */}
-          <div className="flex items-center justify-center gap-3 rounded-2xl bg-white/5 p-3">
+          <div className="flex items-center justify-center gap-3 rounded-2xl bg-white/5 p-3 flex-wrap">
             <ControlButton
               active={micOn}
               onClick={toggleMic}
@@ -233,7 +233,7 @@ export default function VideoSession() {
         </div>
 
         {/* Side panel: transcript + summary */}
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 sm:flex-row lg:flex-col">
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
             <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-white/80">
               <span className="h-2 w-2 rounded-full bg-emerald-400" />
