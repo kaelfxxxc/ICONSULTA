@@ -80,7 +80,7 @@ function SettingsForm({ data, role }: { data: FullProfile; role: Role }) {
   const submitButtonClass = update.isError
     ? 'bg-red-600 text-white shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:bg-red-700 hover:shadow-lg active:translate-y-0 disabled:cursor-not-allowed disabled:bg-red-300 disabled:shadow-none disabled:hover:translate-y-0'
     : update.isSuccess
-      ? 'bg-emerald-600 px-3 py-2 font-headcustom text-white shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:bg-emerald-700 hover:shadow-lg active:translate-y-0 disabled:cursor-not-allowed disabled:bg-emerald-300 disabled:shadow-none disabled:hover:translate-y-0'
+      ? 'bg-emerald-900 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:bg-emerald-800 hover:shadow-lg hover:brightness-110 active:translate-y-0 disabled:cursor-not-allowed disabled:bg-navy-300 disabled:shadow-none disabled:hover:translate-y-0 disabled:hover:brightness-100'
       : 'button-card px-5 py-2.5 text-sm font-semibold text-white shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:bg-navy-800 hover:shadow-lg hover:brightness-110 active:translate-y-0 disabled:cursor-not-allowed disabled:bg-navy-300 disabled:shadow-none disabled:hover:translate-y-0 disabled:hover:brightness-100'
 
   async function handleSubmit(e: FormEvent) {

@@ -39,14 +39,12 @@ export default function AdminSchedule() {
   // once rather than one request per instructor.
   const { data: allAvailability } = useAllAvailability()
 
-  /** Distinct available days per instructor, keyed by instructor profile id. */
-  const activeDaysByInstructor = useMemo(() => {
-    const map = new Map<string, Set<number>>()
+  /** Total available slots per instructor, keyed by instructor profile id. */
+  const slotCountByInstructor = useMemo(() => {
+    const map = new Map<string, number>()
     for (const s of allAvailability ?? []) {
       if (!s.is_available) continue
-      const days = map.get(s.instructor_id) ?? new Set<number>()
-      days.add(s.day_of_week)
-      map.set(s.instructor_id, days)
+      map.set(s.instructor_id, (map.get(s.instructor_id) ?? 0) + 1)
     }
     return map
   }, [allAvailability])
@@ -158,15 +156,15 @@ export default function AdminSchedule() {
                     </div>
                   </div>
 
-                  {/* Active-day count, pushed to the row's right edge. */}
+                  {/* Total slot count, pushed to the row's right edge. */}
                   <span className="ml-auto shrink-0 text-right">
                     <span
                       className={cn(
-                        'block text-2xl leading-none font-black tabular-nums',
+                        'block text-lg leading-none font-black tabular-nums text-center',
                         selected === i.id ? 'text-white' : 'text-slate-800',
                       )}
                     >
-                      {activeDaysByInstructor.get(i.id)?.size ?? 0}
+                      {slotCountByInstructor.get(i.id) ?? 0}
                     </span>
                     <span
                       className={cn(
@@ -174,7 +172,7 @@ export default function AdminSchedule() {
                         selected === i.id ? 'text-navy-200' : 'text-slate-400',
                       )}
                     >
-                      days
+                      slots
                     </span>
                   </span>
                 </button>
@@ -197,14 +195,6 @@ export default function AdminSchedule() {
               }
               description={
                 current?.category ?? 'Weekly consultation availability'
-              }
-              action={
-                totalSlots > 0 ? (
-                  <div className="flex items-center gap-2">
-                    <MetricTile label="Active Days" value={activeDays} />
-                    <MetricTile label="Total Slots" value={totalSlots} />
-                  </div>
-                ) : undefined
               }
             >
               {loadingSlots ? (
@@ -254,7 +244,7 @@ export default function AdminSchedule() {
                           )}
                         </div>
                         {open && (
-                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-sky-100 text-[11px] font-bold tabular-nums text-sky-700">
+                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-800 text-[11px] font-bold tabular-nums text-white">
                             {slots.length}
                           </span>
                         )}

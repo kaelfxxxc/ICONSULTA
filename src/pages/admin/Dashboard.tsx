@@ -82,16 +82,8 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/*
-        Center gets twice the width of either side — it holds the two charts,
-        which need the horizontal room, while the side columns hold a feed, a
-        donut and a health list that read fine narrow. Ratios rather than the
-        instructor dashboard's fixed rem sides, because these side columns
-        carry more content than a compact availability list does.
-      */}
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)_minmax(0,1fr)]">
-        {/* Left — live feed, then the users shortcut */}
-        <div className="space-y-6">
+      <div className="space-y-6">
+        <div className="grid gap-6 sm:grid-cols-[minmax(0,0.9fr)_minmax(0,1.8fr)]">
           <SectionCard
             title="Live Activity"
             description="New consultation requests as they arrive."
@@ -99,22 +91,6 @@ export default function AdminDashboard() {
             <LiveActivityFeed events={liveEvents} />
           </SectionCard>
 
-          <Link
-            to="/admin/users"
-            className="bg-card group flex items-center justify-between rounded-2xl p-5 text-white shadow-sm transition hover:-translate-y-px hover:shadow-[0_10px_24px_rgba(13,27,75,0.28)]"
-          >
-            <div>
-              <div className="text-sm font-semibold">Manage Users</div>
-              <div className="text-xs text-navy-200">
-                Roles, status, and directory
-              </div>
-            </div>
-            <ArrowRightIcon className="h-5 w-5 shrink-0 text-navy-300 transition group-hover:translate-x-0.5" />
-          </Link>
-        </div>
-
-        {/* Center — trend, then volume. Both span the column width. */}
-        <div className="space-y-6">
           <SectionCard
             title="Consultation Trend"
             description="Daily total vs completed appointments."
@@ -122,37 +98,52 @@ export default function AdminDashboard() {
           >
             <AppointmentTrend metrics={metrics} />
           </SectionCard>
-
-          <SectionCard
-            title="Consultation Volume by Department"
-            description="Month-to-date appointment distribution."
-            className="border-t-4 border-t-[#d2a15c]"
-          >
-            <DepartmentVolume data={byDepartment} />
-          </SectionCard>
         </div>
 
-        {/* Right — breakdown, then the health list */}
-        <div className="space-y-6">
-          <SectionCard
-            title="Status Breakdown"
-            description="Month-to-date appointments by status."
-            className="border-t-4 border-t-[#9a8ad1]"
-          >
-            <StatusBreakdown metrics={metrics} />
-          </SectionCard>
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,0.8fr)]">
+          <div className="grid gap-6 sm:grid-cols-[minmax(0,0.9fr)_minmax(0,1.0fr)]">
+            <SectionCard
+              title="Status Breakdown"
+              description="Month-to-date appointments by status."
+              className="border-t-4 border-t-[#9a8ad1]"
+            >
+              <StatusBreakdown metrics={metrics} />
+            </SectionCard>
 
-          <SectionCard title="System Status">
-            <SystemStatusList
-              compact
-              items={[
-                { label: 'API Server', value: 'Operational', ok: true },
-                { label: 'Database', value: 'Healthy', ok: true },
-                { label: 'Auth Service', value: 'Operational', ok: true },
-                { label: 'AI Summaries', value: 'Running', ok: true },
-              ]}
-            />
-          </SectionCard>
+            <SectionCard
+              title="Consultation Volume by Department"
+              description="Month-to-date appointment distribution."
+              className="border-t-4 border-t-[#d2a15c]"
+            >
+              <DepartmentVolume data={byDepartment} />
+            </SectionCard>
+          </div>
+          <div className="space-y-6">
+            <SectionCard title="System Status">
+              <SystemStatusList
+                compact
+                items={[
+                  { label: 'API Server', value: 'Operational', ok: true },
+                  { label: 'Database', value: 'Healthy', ok: true },
+                  { label: 'Auth Service', value: 'Operational', ok: true },
+                  { label: 'AI Summaries', value: 'Running', ok: true },
+                ]}
+              />
+            </SectionCard>
+
+            <Link
+              to="/admin/users"
+              className="bg-card group flex items-center justify-between rounded-2xl p-5 text-white shadow-sm transition hover:-translate-y-px hover:shadow-[0_10px_24px_rgba(13,27,75,0.28)]"
+            >
+              <div>
+                <div className="text-sm font-semibold">Manage Users</div>
+                <div className="text-xs text-navy-200">
+                  Roles, status, and directory
+                </div>
+              </div>
+              <ArrowRightIcon className="h-5 w-5 shrink-0 text-navy-300 transition group-hover:translate-x-0.5" />
+            </Link>
+          </div>
         </div>
       </div>
     </div>
