@@ -91,21 +91,8 @@ export default function InstructorDashboard() {
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[13rem_minmax(0,1fr)_16rem]">
-        {/* Left — availability */}
-        <div>
-          <SectionCard title="Weekly Availability" bodyClassName="p-3">
-            <WeeklyAvailability slots={availability ?? []} />
-            <Link
-              to="/instructor/schedule"
-              className="link-more mt-4 flex items-center justify-center gap-1.5"
-            >
-              Edit availability →
-            </Link>
-          </SectionCard>
-        </div>
-
-        {/* Center — requests, then confirmed meetings */}
+      <div className="grid gap-6 md:grid-cols-[minmax(0,1.9fr)_minmax(0,1.1fr)]">
+        {/* Left — requests, then confirmed meetings */}
         <div className="space-y-6">
           <SectionCard title="Consultation Requests" bodyClassName="space-y-3">
             {requests.length === 0 ? (
@@ -176,8 +163,8 @@ export default function InstructorDashboard() {
           </SectionCard>
         </div>
 
-        {/* Right — activity feed */}
-        <div>
+        {/* Right — wider stack: logs + availability */}
+        <div className="space-y-6">
           <SectionCard title="Recent Logs" bodyClassName="space-y-3">
             {recent.length === 0 ? (
               <p className="py-4 text-center text-sm text-slate-500">
@@ -219,6 +206,16 @@ export default function InstructorDashboard() {
               className="link-more mt-4 flex items-center justify-center gap-1.5"
             >
               View History →
+            </Link>
+          </SectionCard>
+
+          <SectionCard title="Weekly Availability" bodyClassName="p-3">
+            <WeeklyAvailability slots={availability ?? []} />
+            <Link
+              to="/instructor/schedule"
+              className="link-more mt-4 flex items-center justify-center gap-1.5"
+            >
+              Edit availability →
             </Link>
           </SectionCard>
         </div>
@@ -275,9 +272,9 @@ function WeeklyAvailability({ slots }: { slots: InstructorAvailability[] }) {
     return map
   }, [slots])
 
-  return (
+  const renderDays = (days: number[]) => (
     <ul className="space-y-2.5">
-      {[1, 2, 3, 4, 5, 6, 7].map((d) => {
+      {days.map((d) => {
         const daySlots = byDay.get(d) ?? []
         return (
           <li key={d}>
@@ -310,5 +307,12 @@ function WeeklyAvailability({ slots }: { slots: InstructorAvailability[] }) {
         )
       })}
     </ul>
+  )
+
+  return (
+    <div className="flex gap-6">
+      <div className="min-w-0 flex-1">{renderDays([1, 2, 3, 4])}</div>
+      <div className="min-w-0 flex-1">{renderDays([5, 6, 7])}</div>
+    </div>
   )
 }
