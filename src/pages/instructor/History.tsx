@@ -246,7 +246,11 @@ export default function InstructorHistory() {
           {isLoading ? (
             <Loader />
           ) : (
-            <SectionCard title="History" bodyClassName="space-y-2 p-2">
+            <SectionCard
+              title="History"
+              className="flex h-128 flex-col"
+              bodyClassName="min-h-0 flex-1 space-y-2 overflow-y-auto p-2"
+            >
               {completed.length === 0 ? (
                 <EmptyState
                   icon={HistoryIcon}
