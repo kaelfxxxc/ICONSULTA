@@ -22,8 +22,6 @@ import {
   cn,
   formatDate,
   formatDateTime,
-  statusLabel,
-  statusTone,
 } from '../../lib/utils'
 import type { AppointmentWithParties, ResolutionStatus } from '../../types'
 

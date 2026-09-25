@@ -9,6 +9,9 @@ import { Avatar, Loader, PageHeader, SectionCard } from '../components/common'
 import { cn } from '../lib/utils'
 import type { Department, Role } from '../types'
 
+/** Settings tabs. `details` is the role-specific profile tab. */
+type Tab = 'personal' | 'details'
+
 const inputClass =
   'w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100'
 
@@ -76,6 +79,19 @@ function SettingsForm({ data, role }: { data: FullProfile; role: Role }) {
   )
 
   const [saved, setSaved] = useState(false)
+  const [tab, setTab] = useState<Tab>('personal')
+
+  // The Personal panel is always present; the second tab is the role's own profile.
+  // An admin has neither a student nor an instructor row (getFullProfile returns
+  // null for both), so it gets a single panel and no tab strip.
+  const tabs: { key: Tab; label: string }[] = [
+    { key: 'personal', label: 'Personal Info' },
+    ...(role === 'student'
+      ? [{ key: 'details' as const, label: 'Student Details' }]
+      : role === 'instructor'
+        ? [{ key: 'details' as const, label: 'Faculty Details' }]
+        : []),
+  ]
 
   const submitButtonClass = update.isError
     ? 'bg-red-600 text-white shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:bg-red-700 hover:shadow-lg active:translate-y-0 disabled:cursor-not-allowed disabled:bg-red-300 disabled:shadow-none disabled:hover:translate-y-0'
@@ -111,53 +127,86 @@ function SettingsForm({ data, role }: { data: FullProfile; role: Role }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-6 lg:grid-cols-3">
-      <div className="lg:col-span-1">
-        <SectionCard title="Account">
-          <div className="flex flex-col items-center text-center">
-            <Avatar name={data.user.name} size="lg" />
-            <div className="mt-3 font-semibold text-slate-800">
+    <form onSubmit={handleSubmit} className="mt-5 space-y-6">
+      {/* Profile card — full-width row: avatar, identity, role badge. */}
+      <SectionCard>
+        <div className="flex flex-wrap items-center gap-4">
+          <Avatar name={data.user.name} size="lg" />
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-base font-semibold text-slate-800">
               {data.user.name}
             </div>
-            <div className="text-sm text-slate-500">{data.user.email}</div>
-            <span className="mt-2 rounded-full bg-navy-100 px-2.5 py-0.5 text-xs font-medium text-navy-800">
-              {ROLE_LABEL[role]}
-            </span>
+            <div className="truncate text-sm text-slate-500">
+              {data.user.email}
+            </div>
           </div>
-        </SectionCard>
-      </div>
+          <span className="rounded-full bg-navy-100 px-2.5 py-0.5 text-xs font-medium text-navy-800">
+            {ROLE_LABEL[role]}
+          </span>
+        </div>
+      </SectionCard>
 
-      <div className="space-y-6 lg:col-span-2">
-        <SectionCard title="Personal information">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Full name">
-              <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className={inputClass}
-              />
-            </Field>
-            <Field label="Phone">
-              <input
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="+63…"
-                className={inputClass}
-              />
-            </Field>
-            <Field label="Email">
-              <input
-                value={data.user.email}
-                disabled
-                className={cn(inputClass, 'bg-slate-50 text-slate-400')}
-              />
-            </Field>
-          </div>
-        </SectionCard>
+      {/* Tab nav — same idiom as the instructor Requests page. Hidden when the role
+          has only the one Personal panel (admin). */}
+      {tabs.length > 1 && (
+        <div className="flex w-full gap-2 overflow-x-auto rounded-lg border border-[#e5ebf3] bg-white p-2 sm:w-max sm:flex-wrap sm:overflow-visible">
+          {tabs.map((t) => (
+            <button
+              key={t.key}
+              type="button"
+              role="tab"
+              aria-selected={tab === t.key}
+              onClick={() => setTab(t.key)}
+              className={cn(
+                'shrink-0 rounded-lg px-3.5 py-2 text-sm font-extrabold transition',
+                tab === t.key
+                  ? 'bg-navy-900 text-white'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50',
+              )}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      )}
 
-        {role === 'student' && (
-          <SectionCard title="Student details">
-            <div className="grid gap-4 sm:grid-cols-2">
+      {/* Only the active panel is mounted, but field state lives in this component —
+          so switching tabs keeps unsaved edits, and one Save submits every field
+          regardless of which tab is showing. Fragments emit no DOM node, so each
+          field stays a direct child of the grid. */}
+      <SectionCard>
+        <div className="grid gap-4 sm:grid-cols-2">
+          {tab === 'personal' && (
+            <>
+              <Field label="Full name">
+                <input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className={inputClass}
+                />
+              </Field>
+              <Field label="Phone">
+                <input
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="+63…"
+                  className={inputClass}
+                />
+              </Field>
+              <div>
+                <Field label="Email">
+                  <input
+                    value={data.user.email}
+                    disabled
+                    className={inputClass}
+                  />
+                </Field>
+              </div>
+            </>
+          )}
+
+          {role === 'student' && tab === 'details' && (
+            <>
               <Field label="Student ID">
                 <input
                   value={studentId}
@@ -194,13 +243,11 @@ function SettingsForm({ data, role }: { data: FullProfile; role: Role }) {
                   className={inputClass}
                 />
               </Field>
-            </div>
-          </SectionCard>
-        )}
+            </>
+          )}
 
-        {role === 'instructor' && (
-          <SectionCard title="Faculty details">
-            <div className="grid gap-4 sm:grid-cols-2">
+          {role === 'instructor' && tab === 'details' && (
+            <>
               <Field label="Department">
                 <select
                   value={iDept}
@@ -259,33 +306,33 @@ function SettingsForm({ data, role }: { data: FullProfile; role: Role }) {
                   />
                 </Field>
               </div>
-            </div>
-          </SectionCard>
-        )}
-
-        <div className="flex items-center justify-end gap-3">
-          {saved && !update.isPending && (
-            <span className="text-sm text-emerald-600"></span>
+            </>
           )}
-          {update.isError && (
-            <span className="text-sm text-red-600">
-              {(update.error as Error).message}
-            </span>
-          )}
-          <button
-            type="submit"
-            disabled={update.isPending}
-            className={`rounded-lg ${submitButtonClass}`}
-          >
-            {update.isPending
-              ? 'Saving…'
-              : update.isError
-                ? 'Try again'
-                : update.isSuccess
-                  ? 'Changes Saved'
-                  : 'Save changes'}
-          </button>
         </div>
+      </SectionCard>
+
+      <div className="flex items-center justify-end gap-3">
+        {saved && !update.isPending && (
+          <span className="text-sm text-emerald-600"></span>
+        )}
+        {update.isError && (
+          <span className="text-sm text-red-600">
+            {(update.error as Error).message}
+          </span>
+        )}
+        <button
+          type="submit"
+          disabled={update.isPending}
+          className={`rounded-lg ${submitButtonClass}`}
+        >
+          {update.isPending
+            ? 'Saving…'
+            : update.isError
+              ? 'Try again'
+              : update.isSuccess
+                ? 'Changes Saved'
+                : 'Save changes'}
+        </button>
       </div>
     </form>
   )
