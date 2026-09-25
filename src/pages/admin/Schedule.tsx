@@ -9,7 +9,6 @@ import {
   DepartmentBadge,
   EmptyState,
   Loader,
-  MetricTile,
   PageHeader,
   SectionCard,
 } from '../../components/common'
@@ -67,9 +66,8 @@ export default function AdminSchedule() {
     ? DEPARTMENT_ACCENT[current.department]
     : NO_DEPARTMENT_ACCENT
 
-  // byDay only holds days with at least one available slot, so its size is the
-  // active-day count and its contents total the slot count.
-  const activeDays = byDay.size
+  // byDay only holds days with at least one available slot, so its contents
+  // total the slot count.
   const totalSlots = useMemo(
     () => [...byDay.values()].reduce((n, arr) => n + arr.length, 0),
     [byDay],
