@@ -1,4 +1,5 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
+import type { ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useProfile } from '../../hooks/useProfile'
 import { useStudentAppointments } from '../../hooks/useAppointments'
@@ -10,8 +11,7 @@ import {
   Badge,
 } from '../../components/common'
 import { CalendarIcon, VideoIcon } from '../../components/common/icons'
-import { DateBlock } from '../../components/dashboard'
-import { formatTime, statusLabel, statusTone } from '../../lib/utils'
+import { cn, formatTime, statusLabel, statusTone } from '../../lib/utils'
 import type { AppointmentWithParties } from '../../types'
 
 function groupByDay(list: AppointmentWithParties[]) {
@@ -25,18 +25,88 @@ function groupByDay(list: AppointmentWithParties[]) {
   return [...map.entries()].sort(([a], [b]) => a.localeCompare(b))
 }
 
+/** Short month + day-of-month for a `scheduled_at` day key, as the rail prints them. */
+function dayParts(day: string) {
+  const d = new Date(`${day}T00:00:00`)
+  return {
+    month: d.toLocaleString(undefined, { month: 'short' }).toUpperCase(),
+    date: String(d.getDate()),
+  }
+}
+
+/**
+ * One date in the filter rail. Same shape and type as the dashboard `DateBlock`
+ * — month over day in a navy chip — but interactive: the active date sits on
+ * solid navy, the rest on the pale navy wash. Unlike `DateBlock` it is always
+ * visible, since on phones this rail is the only way to filter.
+ */
+function DateFilterCard({
+  month,
+  day,
+  active,
+  onClick,
+}: {
+  month: ReactNode
+  day: ReactNode
+  active: boolean
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={cn(
+        'flex h-14 w-14 shrink-0 flex-col items-center mt-3 ml-1 justify-center rounded-xl transition',
+        active
+          ? 'button-card text-white shadow-sm'
+          : 'bg-white text-navy-700 ring-1 ring-navy-100 hover:bg-navy-50',
+      )}
+    >
+      <span
+        className={cn(
+          'text-[10px] font-semibold tracking-wide',
+          active ? 'text-navy-200' : 'text-navy-400',
+        )}
+      >
+        {month}
+      </span>
+      <span className="text-lg font-bold leading-none">{day}</span>
+    </button>
+  )
+}
+
 export default function StudentSchedule() {
   const navigate = useNavigate()
   const { data: fp } = useProfile()
   const studentId = fp?.student?.id
   const { data: appts, isLoading } = useStudentAppointments(studentId)
+  const [selectedDay, setSelectedDay] = useState<string | null>(null)
 
-  const groups = useMemo(() => {
-    const upcoming = (appts ?? []).filter((a) =>
-      ['pending', 'approved'].includes(a.status),
-    )
-    return groupByDay(upcoming)
-  }, [appts])
+  const upcoming = useMemo(
+    () => (appts ?? []).filter((a) => ['pending', 'approved'].includes(a.status)),
+    [appts],
+  )
+
+  /** Every day that actually has an appointment, ascending — the rail's dates. */
+  const days = useMemo(
+    () => [...new Set(upcoming.map((a) => a.scheduled_at.slice(0, 10)))].sort(),
+    [upcoming],
+  )
+
+  // A day can vanish from `days` (an appointment gets declined or cancelled);
+  // falling back to `null` drops the rail back to "All" without an effect.
+  const activeDay = selectedDay && days.includes(selectedDay) ? selectedDay : null
+
+  const filtered = useMemo(
+    () =>
+      activeDay
+        ? upcoming.filter((a) => a.scheduled_at.slice(0, 10) === activeDay)
+        : upcoming,
+    [upcoming, activeDay],
+  )
+
+  const groups = useMemo(() => groupByDay(filtered), [filtered])
 
   return (
     <div>
@@ -46,9 +116,38 @@ export default function StudentSchedule() {
       >
       </PageHeader>
 
+      {!isLoading && days.length > 0 && (
+        <div className="mt-4 flex items-center gap-3">
+          <div className="flex min-w-0 flex-1 gap-2 overflow-x-auto pb-1">
+            <DateFilterCard
+              month="All"
+              day={upcoming.length}
+              active={activeDay === null}
+              onClick={() => setSelectedDay(null)}
+            />
+            {days.map((day) => {
+              const { month, date } = dayParts(day)
+              return (
+                <DateFilterCard
+                  key={day}
+                  month={month}
+                  day={date}
+                  active={activeDay === day}
+                  onClick={() => setSelectedDay(day)}
+                />
+              )
+            })}
+          </div>
+          <span className="hidden shrink-0 text-xs text-slate-500 sm:block">
+            {filtered.length} of {upcoming.length} appointment
+            {upcoming.length === 1 ? '' : 's'}
+          </span>
+        </div>
+      )}
+
       {isLoading ? (
         <Loader />
-      ) : groups.length === 0 ? (
+      ) : upcoming.length === 0 ? (
         <SectionCard>
           <EmptyState
             icon={CalendarIcon}
@@ -56,12 +155,29 @@ export default function StudentSchedule() {
             hint="Once you book a consultation it will appear here, grouped by day."
           />
         </SectionCard>
+      ) : groups.length === 0 ? (
+        <div className="mt-6">
+          <SectionCard>
+            <EmptyState
+              icon={CalendarIcon}
+              title="Nothing scheduled for this date"
+              hint="Pick the All card to see everything you have booked."
+              action={
+                <button
+                  onClick={() => setSelectedDay(null)}
+                  className="rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
+                >
+                  Show all dates
+                </button>
+              }
+            />
+          </SectionCard>
+        </div>
       ) : (
-        <div className="space-y-6">
+        <div className="mt-6 space-y-6">
           {groups.map(([day, items]) => (
             <div key={day}>
               <div className="mb-2 flex items-center gap-3">
-                <DateBlock iso={`${day}T00:00:00`} />
                 <div>
                   <div className="text-sm font-semibold text-slate-800">
                     {new Date(`${day}T00:00:00`).toLocaleDateString(undefined, {
