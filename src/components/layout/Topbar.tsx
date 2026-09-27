@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/authContext'
@@ -27,8 +27,31 @@ export function Topbar({
 }) {
   const { profile, signOut } = useAuth()
   const navigate = useNavigate()
+  const menuRef = useRef<HTMLDivElement | null>(null)
+  const profileButtonRef = useRef<HTMLButtonElement | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
   const [query, setQuery] = useState('')
+
+  useEffect(() => {
+    if (!menuOpen) return
+
+    function handleClickOutside(event: MouseEvent) {
+      const target = event.target
+
+      if (
+        target instanceof Node &&
+        menuRef.current &&
+        !menuRef.current.contains(target) &&
+        profileButtonRef.current &&
+        !profileButtonRef.current.contains(target)
+      ) {
+        setMenuOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [menuOpen])
 
   function handleSearch(e: FormEvent) {
     e.preventDefault()
@@ -74,6 +97,7 @@ export function Topbar({
 
         <div className="relative">
           <button
+            ref={profileButtonRef}
             type="button"
             onClick={() => setMenuOpen((v) => !v)}
             className="flex items-center gap-2 rounded-xl py-1 pl-1 pr-2 transition hover:bg-white"
@@ -96,32 +120,27 @@ export function Topbar({
           </button>
 
           {menuOpen && (
-            <>
+            <div
+              ref={menuRef}
+              className="absolute right-0 z-20 mt-2 w-60 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg"
+            >
+              <div className="border-b border-slate-100 px-4 py-3">
+                <div className="text-sm font-semibold text-slate-800">
+                  {profile?.name}
+                </div>
+                <div className="truncate text-xs text-slate-500">
+                  {profile?.email}
+                </div>
+              </div>
               <button
                 type="button"
-                aria-label="Close menu"
-                className="fixed inset-0 z-10 cursor-default"
-                onClick={() => setMenuOpen(false)}
-              />
-              <div className="absolute right-0 z-20 mt-2 w-60 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg">
-                <div className="border-b border-slate-100 px-4 py-3">
-                  <div className="text-sm font-semibold text-slate-800">
-                    {profile?.name}
-                  </div>
-                  <div className="truncate text-xs text-slate-500">
-                    {profile?.email}
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleSignOut}
-                  className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm font-medium text-red-600 hover:bg-red-50"
-                >
-                  <LogOutIcon className="h-4 w-4" />
-                  Sign out
-                </button>
-              </div>
-            </>
+                onClick={handleSignOut}
+                className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm font-medium text-red-600 hover:bg-red-50"
+              >
+                <LogOutIcon className="h-4 w-4" />
+                Sign out
+              </button>
+            </div>
           )}
         </div>
       </div>

@@ -5,7 +5,6 @@ import { signIn, signOut, signUp } from '../services/auth.service'
 import { ROLE_HOME, DEPARTMENTS } from '../utils/constants'
 import { cn } from '../lib/utils'
 import {
-  ArrowUpRightIcon,
   ArrowRightIcon,
   BookOpenIcon,
   CheckIcon,
@@ -101,13 +100,13 @@ export default function Login({ variant = 'default' }: { variant?: 'default' | '
   return (
     <div className="flex min-h-full flex-col bg-slate-50 text-slate-900">
       {/* Top bar spans the full width above both columns. */}
-      <main className="mx-auto grid w-full max-w-6xl flex-1 gap-10 px-3 py-1 lg:grid-cols-2 lg:gap-16 lg:px-10 lg:py-5">
+      <main className="mx-auto grid w-full max-w-6xl flex-1 gap-10 px-3 py-1 lg:grid-cols-2 lg:gap-16 lg:px-10 lg:py-4">
         {/* Editorial column — desktop only; the card carries the brand on mobile. */}
         <section className="animate-rise hidden flex-col justify-between lg:flex">
           <div>
 
-            <Logo className="mt-8 h-11 w-auto" />
-            <h1 className="mt-10 text-5xl font-extrabold leading-[1.04] tracking-tight xl:text-6xl">
+            <Logo className="my-10 h-20 w-auto" />
+            <h1 className="text-5xl font-extrabold leading-[1.04] tracking-tight xl:text-6xl">
               <span className="text-navy-900">Academic consultations,</span>
               <br />
               <span className="text-navy-900">thoughtfully scheduled.</span>
@@ -393,7 +392,7 @@ export default function Login({ variant = 'default' }: { variant?: 'default' | '
                     className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-navy-900"
                   >
                     Student / instructor sign in
-                    <ArrowUpRightIcon className="h-3 w-3" />
+                    <ArrowRightIcon className="h-3 w-3" />
                   </Link>
                 ) : (
                   <Link
@@ -401,7 +400,7 @@ export default function Login({ variant = 'default' }: { variant?: 'default' | '
                     className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-navy-900"
                   >
                     Administrator sign in
-                    <ArrowUpRightIcon className="h-3 w-3" />
+                    <ArrowRightIcon className="h-3 w-3" />
                   </Link>
                 )}
               </div>
