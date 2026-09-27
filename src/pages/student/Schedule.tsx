@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useProfile } from '../../hooks/useProfile'
-import { useStudentAppointments } from '../../hooks/useAppointments'
+import { useStudentAppointments, useCancelAppointment } from '../../hooks/useAppointments'
 import {
   EmptyState,
   Loader,
@@ -11,13 +11,37 @@ import {
   Badge,
 } from '../../components/common'
 import { CalendarIcon, VideoIcon } from '../../components/common/icons'
-import { cn, formatTime, statusLabel, statusTone } from '../../lib/utils'
+import { DateBlock } from '../../components/dashboard'
+import { cn, statusLabel, statusTone } from '../../lib/utils'
 import type { AppointmentWithParties } from '../../types'
+
+/**
+ * `scheduled_at` is a timestamptz, so it arrives as a UTC instant — never read
+ * the date or hour out of the raw string. A 9:00 AM booking in UTC+8 serialises
+ * as `T01:00:00Z`, so slicing would show 1:00 AM and file it under the previous
+ * day. Always go through these, which convert to the viewer's local time.
+ */
+function localDay(iso: string) {
+  const d = new Date(iso)
+  return [
+    d.getFullYear(),
+    String(d.getMonth() + 1).padStart(2, '0'),
+    String(d.getDate()).padStart(2, '0'),
+  ].join('-')
+}
+
+/** Local wall-clock time, e.g. "9:00 AM". */
+function localTime(iso: string) {
+  return new Date(iso).toLocaleTimeString(undefined, {
+    hour: 'numeric',
+    minute: '2-digit',
+  })
+}
 
 function groupByDay(list: AppointmentWithParties[]) {
   const map = new Map<string, AppointmentWithParties[]>()
   for (const a of list) {
-    const key = a.scheduled_at.slice(0, 10)
+    const key = localDay(a.scheduled_at)
     const arr = map.get(key) ?? []
     arr.push(a)
     map.set(key, arr)
@@ -81,6 +105,7 @@ export default function StudentSchedule() {
   const { data: fp } = useProfile()
   const studentId = fp?.student?.id
   const { data: appts, isLoading } = useStudentAppointments(studentId)
+  const cancel = useCancelAppointment(studentId)
   const [selectedDay, setSelectedDay] = useState<string | null>(null)
 
   const upcoming = useMemo(
@@ -90,7 +115,7 @@ export default function StudentSchedule() {
 
   /** Every day that actually has an appointment, ascending — the rail's dates. */
   const days = useMemo(
-    () => [...new Set(upcoming.map((a) => a.scheduled_at.slice(0, 10)))].sort(),
+    () => [...new Set(upcoming.map((a) => localDay(a.scheduled_at)))].sort(),
     [upcoming],
   )
 
@@ -101,7 +126,7 @@ export default function StudentSchedule() {
   const filtered = useMemo(
     () =>
       activeDay
-        ? upcoming.filter((a) => a.scheduled_at.slice(0, 10) === activeDay)
+        ? upcoming.filter((a) => localDay(a.scheduled_at) === activeDay)
         : upcoming,
     [upcoming, activeDay],
   )
@@ -178,6 +203,7 @@ export default function StudentSchedule() {
           {groups.map(([day, items]) => (
             <div key={day}>
               <div className="mb-2 flex items-center gap-3">
+                <DateBlock iso={`${day}T00:00:00`} />
                 <div>
                   <div className="text-sm font-semibold text-slate-800">
                     {new Date(`${day}T00:00:00`).toLocaleDateString(undefined, {
@@ -200,7 +226,7 @@ export default function StudentSchedule() {
                     className="flex items-center gap-4 px-5 py-3.5"
                   >
                     <div className="w-16 text-sm font-semibold text-slate-700">
-                      {formatTime(a.scheduled_at.slice(11, 16) + ':00')}
+                      {localTime(a.scheduled_at)}
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-sm font-medium text-slate-800">
@@ -219,6 +245,15 @@ export default function StudentSchedule() {
                         className="inline-flex items-center gap-1.5 rounded-lg bg-navy-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-navy-800"
                       >
                         <VideoIcon className="h-4 w-4" /> Join
+                      </button>
+                    )}
+                    {(a.status === 'pending' || a.status === 'approved') && (
+                      <button
+                        onClick={() => cancel.mutate(a.id)}
+                        disabled={cancel.isPending}
+                        className="rounded-lg px-3 py-1.5 text-xs font-semibold text-red-600 ring-1 ring-red-200 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {cancel.isPending ? 'Cancelling…' : 'Cancel'}
                       </button>
                     )}
                   </div>
