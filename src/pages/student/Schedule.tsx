@@ -11,7 +11,6 @@ import {
   Badge,
 } from '../../components/common'
 import { CalendarIcon, VideoIcon } from '../../components/common/icons'
-import { DateBlock } from '../../components/dashboard'
 import { cn, statusLabel, statusTone } from '../../lib/utils'
 import type { AppointmentWithParties } from '../../types'
 
@@ -202,9 +201,8 @@ export default function StudentSchedule() {
         <div className="mt-6 space-y-6">
           {groups.map(([day, items]) => (
             <div key={day}>
-              <div className="mb-2 flex items-center gap-3">
-                <DateBlock iso={`${day}T00:00:00`} />
-                <div>
+              <div className="">
+                <div className="mb-2 flex items-center gap-3 flex-row">
                   <div className="text-sm font-semibold text-slate-800">
                     {new Date(`${day}T00:00:00`).toLocaleDateString(undefined, {
                       weekday: 'long',
@@ -223,39 +221,44 @@ export default function StudentSchedule() {
                 {items.map((a) => (
                   <div
                     key={a.id}
-                    className="flex items-center gap-4 px-5 py-3.5"
+                    className="flex flex-col gap-3 px-5 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
                   >
-                    <div className="w-16 text-sm font-semibold text-slate-700">
-                      {localTime(a.scheduled_at)}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm font-medium text-slate-800">
-                        {a.reason ?? 'Consultation'}
+                    <div className="flex items-center gap-4 min-w-0">
+                      <div className="w-16 text-sm font-semibold text-slate-700">
+                        {localTime(a.scheduled_at)}
                       </div>
-                      <div className="truncate text-xs text-slate-500">
-                        {a.instructor?.user?.name}
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-sm font-medium text-slate-800">
+                          {a.reason ?? 'Consultation'}
+                        </div>
+                        <div className="truncate text-xs text-slate-500">
+                          {a.instructor?.user?.name}
+                        </div>
                       </div>
                     </div>
-                    <Badge tone={statusTone(a.status)}>
-                      {statusLabel(a.status)}
-                    </Badge>
-                    {a.status === 'approved' && a.video_room_id && (
-                      <button
-                        onClick={() => navigate(`/session/${a.id}`)}
-                        className="inline-flex items-center gap-1.5 rounded-lg bg-navy-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-navy-800"
-                      >
-                        <VideoIcon className="h-4 w-4" /> Join
-                      </button>
-                    )}
-                    {(a.status === 'pending' || a.status === 'approved') && (
-                      <button
-                        onClick={() => cancel.mutate(a.id)}
-                        disabled={cancel.isPending}
-                        className="rounded-lg px-3 py-1.5 text-xs font-semibold text-red-600 ring-1 ring-red-200 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        {cancel.isPending ? 'Cancelling…' : 'Cancel'}
-                      </button>
-                    )}
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Badge tone={statusTone(a.status)}>
+                        {statusLabel(a.status)}
+                      </Badge>
+                      {a.status === 'approved' && a.video_room_id && (
+                        <button
+                          onClick={() => navigate(`/session/${a.id}`)}
+                          className="inline-flex items-center gap-1.5 rounded-lg bg-navy-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-navy-800"
+                        >
+                          <VideoIcon className="h-4 w-4" /> Join
+                        </button>
+                      )}
+                      {(a.status === 'pending' || a.status === 'approved') && (
+                        <button
+                          onClick={() => cancel.mutate(a.id)}
+                          disabled={cancel.isPending}
+                          className="rounded-lg px-3 py-1.5 text-xs font-semibold text-red-600 ring-1 ring-red-200 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {cancel.isPending ? 'Cancelling…' : 'Cancel'}
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
