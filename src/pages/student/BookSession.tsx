@@ -2,11 +2,7 @@ import { useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useProfile } from '../../hooks/useProfile'
 import { useInstructor, useInstructors, useAvailability } from '../../hooks/useInstructors'
-import {
-  findInstructorBookingOnDay,
-  useCreateAppointment,
-  useStudentAppointments,
-} from '../../hooks/useAppointments'
+import { useCreateAppointment } from '../../hooks/useAppointments'
 import {
   Avatar,
   Loader,
@@ -60,16 +56,6 @@ export default function BookSession() {
   const { data: availability } = useAvailability(instructorId ?? undefined)
   const create = useCreateAppointment()
 
-  // One booking per instructor per day: a pending or approved session with the
-  // same instructor on the chosen date blocks the request. Other instructors
-  // and other dates stay open.
-  const { data: myAppointments, isLoading: loadingMine } =
-    useStudentAppointments(studentId)
-  const sameDayBooking =
-    instructorId && date
-      ? findInstructorBookingOnDay(myAppointments, instructorId, date)
-      : undefined
-
   const daySlots = useMemo(() => {
     if (!date || !availability) return []
     const wd = isoWeekday(date)
@@ -86,12 +72,6 @@ export default function BookSession() {
       // the generic "choose a slot" message would send the user in circles.
       setError(
         'Your student profile is still loading. Refresh the page, and if this keeps happening contact an administrator.',
-      )
-      return
-    }
-    if (sameDayBooking) {
-      setError(
-        'You already have an appointment with this instructor on that date. Each instructor can only be booked once per day — pick another date.',
       )
       return
     }
@@ -191,14 +171,7 @@ export default function BookSession() {
           </SectionCard>
 
           <SectionCard title="2. Choose a time slot">
-            {sameDayBooking ? (
-              <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-700">
-                You already have an appointment with{' '}
-                {instructor?.user?.name ?? 'this instructor'} on this date. Each
-                instructor can only be booked once per day — pick another date
-                or a different faculty member.
-              </p>
-            ) : !date ? (
+            {!date ? (
               <p className="text-sm text-slate-500">
                 Select a date first to see open slots.
               </p>
@@ -285,13 +258,7 @@ export default function BookSession() {
 
             <button
               onClick={handleBook}
-              disabled={
-                create.isPending ||
-                loadingMine ||
-                !!sameDayBooking ||
-                !time ||
-                !reason.trim()
-              }
+              disabled={create.isPending || !time || !reason.trim()}
               className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-navy-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-navy-800 disabled:cursor-not-allowed disabled:bg-navy-300"
             >
               {create.isPending ? (
