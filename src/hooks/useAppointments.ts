@@ -11,6 +11,39 @@ import {
   listStudentAppointments,
   rejectAppointment,
 } from '../services/appointment.service'
+import type { Appointment } from '../types'
+
+/**
+ * Local calendar day (`YYYY-MM-DD`) for a timestamptz. `scheduled_at` is a UTC
+ * instant, so slicing the raw string files evening bookings under the wrong day
+ * for anyone east of UTC — always convert first.
+ */
+export function localDayKey(iso: string): string {
+  const d = new Date(iso)
+  return [
+    d.getFullYear(),
+    String(d.getMonth() + 1).padStart(2, '0'),
+    String(d.getDate()).padStart(2, '0'),
+  ].join('-')
+}
+
+/**
+ * A student may book a given instructor only once per day. This returns the
+ * booking that already claims that instructor's day, or undefined when the day
+ * is free. Cancelled and rejected requests do not count, so they free the day.
+ */
+export function findInstructorBookingOnDay(
+  list: Appointment[] | undefined,
+  instructorId: string,
+  day: string,
+): Appointment | undefined {
+  return (list ?? []).find(
+    (a) =>
+      a.instructor_id === instructorId &&
+      (a.status === 'pending' || a.status === 'approved') &&
+      localDayKey(a.scheduled_at) === day,
+  )
+}
 
 export function useStudentAppointments(studentProfileId?: string) {
   return useSupabaseQuery(
