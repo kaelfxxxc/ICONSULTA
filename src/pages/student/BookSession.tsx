@@ -2,7 +2,10 @@ import { useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useProfile } from '../../hooks/useProfile'
 import { useInstructor, useInstructors, useAvailability } from '../../hooks/useInstructors'
-import { useCreateAppointment } from '../../hooks/useAppointments'
+import {
+  useCreateAppointment,
+  useStudentAppointments,
+} from '../../hooks/useAppointments'
 import {
   Avatar,
   Loader,
@@ -36,6 +39,28 @@ function hourlySlots(start: string, end: string): string[] {
 
 const todayStr = new Date().toISOString().slice(0, 10)
 
+/** Local minutes-since-midnight for a booked instant. */
+function slotMinutes(iso: string): number {
+  const d = new Date(iso)
+  return d.getHours() * 60 + d.getMinutes()
+}
+
+/** `HH:mm` slot label → minutes since midnight. */
+function labelMinutes(t: string): number {
+  const [h, m] = t.split(':')
+  return Number(h) * 60 + Number(m)
+}
+
+/** Local `YYYY-MM-DD` for a booked instant — matches the date input's value. */
+function localDayKey(iso: string): string {
+  const d = new Date(iso)
+  return [
+    d.getFullYear(),
+    String(d.getMonth() + 1).padStart(2, '0'),
+    String(d.getDate()).padStart(2, '0'),
+  ].join('-')
+}
+
 export default function BookSession() {
   const navigate = useNavigate()
   const [params] = useSearchParams()
@@ -65,6 +90,35 @@ export default function BookSession() {
       .sort()
   }, [date, availability])
 
+  const { data: myAppointments } = useStudentAppointments(studentId)
+
+  // Times *this* student already holds on the chosen day. They can't attend two
+  // consultations at 4:00, so their own bookings block that hour whichever
+  // instructor it is with — but only for that day; tomorrow's 4:00 is free.
+  //
+  // This is the only occupancy the browser can see: RLS hides other students'
+  // appointments, so slots taken by someone else can't be greyed out here
+  // without a database-side helper.
+  const myTakenMinutes = useMemo(() => {
+    if (!date) return []
+    return (myAppointments ?? [])
+      .filter(
+        (a) =>
+          (a.status === 'pending' || a.status === 'approved') &&
+          localDayKey(a.scheduled_at) === date,
+      )
+      .map((a) => slotMinutes(a.scheduled_at))
+  }, [myAppointments, date])
+
+  // A booking holds the whole hour it starts in, so a 4:00 booking blocks the
+  // 4:00 slot and a legacy 4:30 booking blocks it too.
+  const isSlotTaken = (t: string) => {
+    const start = labelMinutes(t)
+    return myTakenMinutes.some((m) => m >= start && m < start + 60)
+  }
+  const timeTaken = !!time && isSlotTaken(time)
+  const dayFull = daySlots.length > 0 && daySlots.every(isSlotTaken)
+
   async function handleBook() {
     setError(null)
     if (!studentId) {
@@ -73,6 +127,13 @@ export default function BookSession() {
       setError(
         'Your student profile is still loading. Refresh the page, and if this keeps happening contact an administrator.',
       )
+      return
+    }
+    if (timeTaken) {
+      setError(
+        'You already have an appointment at that time. Please choose another slot or day.',
+      )
+      setTime('')
       return
     }
     if (!instructorId || !date || !time || !reason.trim()) {
@@ -180,23 +241,47 @@ export default function BookSession() {
                 No availability on this day. Try another date.
               </p>
             ) : (
-              <div className="flex flex-wrap gap-2">
-                {daySlots.map((t) => (
-                  <button
-                    key={t}
-                    onClick={() => setTime(t)}
-                    className={cn(
-                      'inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition',
-                      time === t
-                        ? 'bg-navy-900 text-white'
-                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200',
-                    )}
-                  >
-                    <ClockIcon className="h-4 w-4" />
-                    {formatTime(`${t}:00`)}
-                  </button>
-                ))}
-              </div>
+              <>
+                {dayFull && (
+                  <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
+                    You already have appointments during all of this
+                    instructor&rsquo;s slots on this date. Try another date.
+                  </p>
+                )}
+                <div className="flex flex-wrap gap-2">
+                  {daySlots.map((t) => {
+                    const booked = isSlotTaken(t)
+                    return (
+                      <button
+                        key={t}
+                        onClick={() => setTime(t)}
+                        disabled={booked}
+                        title={
+                          booked
+                            ? 'You already have an appointment at this time'
+                            : undefined
+                        }
+                        className={cn(
+                          'inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition',
+                          time === t
+                            ? 'bg-navy-900 text-white'
+                            : 'bg-slate-100 text-slate-700 hover:bg-slate-200',
+                          booked &&
+                            'cursor-not-allowed bg-slate-200 text-slate-500 hover:bg-slate-200',
+                        )}
+                      >
+                        <ClockIcon className="h-4 w-4" />
+                        {formatTime(`${t}:00`)}
+                        {booked && (
+                          <span className="text-[11px] font-normal">
+                            Already booked
+                          </span>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+              </>
             )}
           </SectionCard>
 
@@ -258,7 +343,9 @@ export default function BookSession() {
 
             <button
               onClick={handleBook}
-              disabled={create.isPending || !time || !reason.trim()}
+              disabled={
+                create.isPending || timeTaken || !time || !reason.trim()
+              }
               className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-navy-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-navy-800 disabled:cursor-not-allowed disabled:bg-navy-300"
             >
               {create.isPending ? (
