@@ -48,6 +48,7 @@ export default function InstructorRequests() {
   }, [appts, tab])
 
   const busy = approve.isPending || reject.isPending || complete.isPending
+  const decisionError = approve.error ?? reject.error ?? complete.error
 
   return (
     <div>
@@ -55,6 +56,14 @@ export default function InstructorRequests() {
         title="Consultation Requests"
         subtitle="Review, approve, and manage your student consultations."
       />
+
+      {decisionError && (
+        <div role="alert" className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {decisionError.message.includes('already booked') || decisionError.message.includes('duplicate key')
+            ? 'This request cannot be approved because another active appointment already reserves that instructor time. Decline one of the conflicting requests first.'
+            : `Could not update this request: ${decisionError.message}`}
+        </div>
+      )}
 
       <div className="mb-5 flex w-full gap-2 overflow-x-auto p-2 border border-[#e5ebf3] rounded-lg bg-white sm:w-max sm:flex-wrap sm:overflow-visible">
         {TABS.map((t) => {

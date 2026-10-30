@@ -71,18 +71,23 @@ export function useAppointmentActions(instructorProfileId?: string) {
     void qc.invalidateQueries({ queryKey: ['appointments'] })
   }
 
+  const invalidateAfterDecision = () => {
+    invalidate()
+    void qc.invalidateQueries({ queryKey: ['instructor-busy-slots'] })
+  }
+
   const approve = useMutation({
     mutationFn: approveAppointment,
-    onSuccess: invalidate,
+    onSettled: invalidateAfterDecision,
   })
   const reject = useMutation({
     mutationFn: (v: { id: string; reason?: string }) =>
       rejectAppointment(v.id, v.reason),
-    onSuccess: invalidate,
+    onSettled: invalidateAfterDecision,
   })
   const complete = useMutation({
     mutationFn: completeAppointment,
-    onSuccess: invalidate,
+    onSettled: invalidateAfterDecision,
   })
   return { approve, reject, complete }
 }

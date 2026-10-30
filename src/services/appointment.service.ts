@@ -94,11 +94,14 @@ export async function createAppointment(
 }
 
 export async function approveAppointment(id: string): Promise<void> {
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('appointments')
     .update({ status: 'approved', video_room_id: `room-${id.slice(0, 8)}` })
     .eq('id', id)
+    .select('id')
+    .maybeSingle()
   if (error) throw error
+  if (!data) throw new Error('No appointment was updated. Check your instructor access and the Supabase appointment update policy.')
 }
 
 export async function rejectAppointment(
