@@ -54,16 +54,16 @@ export default function VideoSession() {
     micOn,
     camOn,
     sharing,
-    remoteMuted,
     remoteCamOff,
     remoteVideoLive,
     setLocalVideoEl,
     setRemoteVideoEl,
+    participants,
     toggleMic,
     toggleCam,
     toggleShare,
     stopAll,
-  } = useWebRTC(ended ? undefined : appointmentId, profile?.id)
+  } = useWebRTC(ended ? undefined : appointmentId, profile?.id, profile?.name)
 
   const elapsed = useElapsed(!ended)
 
@@ -105,9 +105,9 @@ export default function VideoSession() {
               : null
 
   return (
-    <div className="flex h-full flex-col bg-navy-950 text-white">
+    <div className="flex h-dvh min-h-0 flex-col overflow-hidden bg-navy-950 text-white">
       {/* Slim topbar */}
-      <header className="flex min-h-14 shrink-0 items-center justify-between border-b border-white/10 px-4">
+      <header className="flex min-h-14 shrink-0 items-center justify-between gap-2 border-b border-white/10 px-2 sm:px-4">
         <div className="flex items-center gap-1 sm:gap-3">
           <button
             onClick={() => navigate(home)}
@@ -119,13 +119,13 @@ export default function VideoSession() {
           {/* The mark carries no size of its own, and `max-w-full` resolves against
               this box — so the width here is what actually scales the logo down
               from its 500px natural width to fit the slim topbar. */}
-          <div className="w-40 sm:w-70 xs:w-50 shrink-0 bg-slate-50 rounded-[10px] sm:rounded-2xl m-2 px-2">
+          <div className="w-28 shrink-0 rounded-lg bg-slate-50 px-2 sm:m-2 sm:w-52 sm:rounded-2xl">
             <Brand compact />
           </div>
         </div>
-        <div className="flex items-center gap-8">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-8">
           <div className="hidden md:block">
-            <div className="text-sm font-semibold text-center">
+            <div className="max-w-48 truncate text-center text-sm font-semibold">
               {appt?.reason ?? 'Consultation'}
             </div>
             <div className="text-xs text-white/50">with {counterpartName}</div>
@@ -136,11 +136,13 @@ export default function VideoSession() {
                 className={cn(
                   'h-2 w-2 rounded-full',
                   phase === 'connected'
-                    ? 'animate-pulse bg-red-500'
-                    : 'bg-amber-400',
+                    ? 'animate-pulse bg-green-500'
+                    : 'bg-red-500',
                 )}
               />
-              {phase === 'connected' ? `LIVE · ${elapsed}` : 'Connecting'}
+              <span className={phase === 'connected' ? 'text-green-400' : 'text-red-400'}>
+                {phase === 'connected' ? `LIVE · ${elapsed}` : 'Connecting'}
+              </span>
             </span>
           ) : (
             <span className="inline-flex items-center gap-2 rounded-full bg-emerald-500/20 px-3 py-1.5 text-xs font-medium text-emerald-300">
@@ -151,9 +153,9 @@ export default function VideoSession() {
       </header>
 
       {/* Body */}
-      <div className="grid flex-1 gap-4 overflow-y-auto p-4 lg:grid-cols-3">
+      <div className="grid min-h-0 flex-1 gap-3 overflow-y-auto p-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:gap-4 sm:p-4 lg:grid-cols-3">
         {/* Video area */}
-        <div className="flex flex-col gap-4 lg:col-span-2">
+        <div className="flex min-h-0 flex-col gap-3 sm:gap-4 lg:col-span-2">
           {mediaError && !ended && (
             <div className="rounded-2xl border border-amber-400/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
               <span className="font-semibold">Camera / microphone unavailable. </span>
@@ -161,17 +163,7 @@ export default function VideoSession() {
             </div>
           )}
 
-          <div className="grid flex-1 gap-4 sm:grid-cols-2">
-            <VideoTile
-              name={counterpartName}
-              videoRef={setRemoteVideoEl}
-              muted={remoteMuted}
-              camOff={remoteCamOff}
-              placeholder={ended ? 'Session ended' : connectionLabel}
-              // Keyed on the peer's video actually arriving, not on `phase`: a
-              // renegotiation or brief ICE hiccup must not hide a live feed.
-              showPlaceholder={ended || !remoteVideoLive || remoteCamOff}
-            />
+          <div className="grid min-h-[42vh] flex-1 auto-rows-fr grid-cols-1 gap-2 sm:min-h-[50vh] sm:grid-cols-2 sm:gap-4 xl:grid-cols-3">
             <VideoTile
               name={`${selfName} (You)`}
               videoRef={setLocalVideoEl}
@@ -181,12 +173,28 @@ export default function VideoSession() {
               placeholder={ended ? 'Camera off' : null}
               showPlaceholder={ended || !camOn}
             />
+            {participants.map((participant) => (
+              <VideoTile
+                key={participant.id}
+                name={participant.name || 'Guest'}
+                videoRef={(el) => setRemoteVideoEl(participant.id, el)}
+                muted={!participant.micOn}
+                camOff={participant.camOff}
+                placeholder="Waiting for video…"
+                showPlaceholder={participant.stream.getVideoTracks().length === 0 || participant.camOff}
+              />
+            ))}
+            {participants.length === 0 && !ended && (
+              <div className="flex min-h-40 items-center justify-center rounded-2xl border border-dashed border-white/15 px-4 text-center text-sm text-white/45 sm:min-h-52">
+                {connectionLabel ?? 'Share the call code to invite participants.'}
+              </div>
+            )}
           </div>
 
-          {appt?.call_code && <div className="rounded-xl bg-white/5 px-4 py-3 text-sm text-white/70">Share code <span className="ml-2 rounded bg-white/10 px-2 py-1 font-mono font-bold tracking-widest text-white">{appt.call_code}</span> with students who need to join.</div>}
+          {appt?.call_code && <div className="rounded-xl bg-white/5 px-3 py-2 text-center text-xs text-white/70 sm:px-4 sm:py-3 sm:text-sm">Share code <span className="ml-2 rounded bg-white/10 px-2 py-1 font-mono font-bold tracking-widest text-white">{appt.call_code}</span> to invite participants.</div>}
 
           {/* Control bar */}
-          <div className="flex items-center justify-center gap-3 rounded-2xl bg-white/5 p-3 flex-wrap">
+          <div className="sticky bottom-0 flex flex-wrap items-center justify-center gap-2 rounded-2xl border border-white/10 bg-navy-900/95 p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur sm:gap-3 sm:p-3">
             <ControlButton
               active={micOn}
               onClick={toggleMic}
@@ -225,7 +233,7 @@ export default function VideoSession() {
               <button
                 onClick={handleEnd}
                 disabled={endSession.isPending}
-                className="ml-2 inline-flex items-center gap-2 rounded-full bg-red-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-60"
+                className="inline-flex min-h-11 items-center gap-2 rounded-full bg-red-600 px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-red-700 disabled:opacity-60 sm:ml-2 sm:px-5 sm:py-3 sm:text-sm"
               >
                 <PhoneOffIcon className="h-5 w-5" />
                 {endSession.isPending ? 'Ending…' : 'End Session & Summarize'}
@@ -304,7 +312,7 @@ function VideoTile({
   showPlaceholder?: boolean
 }) {
   return (
-    <div className="relative flex min-h-[200px] items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-navy-800 to-navy-950 ring-1 ring-white/10">
+    <div className="relative flex aspect-video min-h-40 w-full items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-navy-800 to-navy-950 ring-1 ring-white/10 sm:min-h-56 sm:rounded-2xl">
       {/* Real media. `muted` on self is required or the room echoes. */}
       <video
         ref={videoRef}

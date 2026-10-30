@@ -8,6 +8,7 @@ import {
 import { AiSummaryPanel, AppointmentItem } from '../../components/dashboard'
 import {
   ApproveDecline,
+  CallCodeJoin,
   EmptyState,
   Loader,
   PageHeader,
@@ -64,6 +65,8 @@ export default function InstructorRequests() {
             : `Could not update this request: ${decisionError.message}`}
         </div>
       )}
+
+      <div className="mb-5"><CallCodeJoin /></div>
 
       <div className="mb-5 flex w-full gap-2 overflow-x-auto p-2 border border-[#e5ebf3] rounded-lg bg-white sm:w-max sm:flex-wrap sm:overflow-visible">
         {TABS.map((t) => {

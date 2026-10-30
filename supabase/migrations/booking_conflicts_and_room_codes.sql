@@ -73,16 +73,79 @@ where status = 'approved' and call_code is null;
 create unique index if not exists appointments_call_code_unique
   on public.appointments (call_code) where call_code is not null;
 
+-- Keep group-call access scoped to users who actually entered a valid code.
+create table if not exists public.call_participants (
+  appointment_id uuid not null references public.appointments(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  joined_at timestamptz not null default now(),
+  primary key (appointment_id, user_id)
+);
+alter table public.call_participants enable row level security;
+revoke all on public.call_participants from anon, authenticated;
+
+drop policy if exists appt_select on public.appointments;
+create policy appt_select on public.appointments for select using (
+  student_id = public.current_student_profile_id()
+  or instructor_id = public.current_instructor_profile_id()
+  or public.is_admin()
+  or exists (
+    select 1 from public.call_participants cp
+    where cp.appointment_id = appointments.id and cp.user_id = auth.uid()
+  )
+);
+
+create or replace function public.can_access_appointment(appt uuid)
+returns boolean language sql stable security definer set search_path = public as $$
+  select public.is_admin() or exists (
+    select 1 from public.appointments a
+    where a.id = appt
+      and (a.student_id = public.current_student_profile_id()
+        or a.instructor_id = public.current_instructor_profile_id())
+  ) or exists (
+    select 1 from public.call_participants cp
+    where cp.appointment_id = appt and cp.user_id = auth.uid()
+  );
+$$;
+create or replace function public.shares_appointment(target_user_id uuid)
+returns boolean language sql stable security definer set search_path = public as $$
+  select exists (
+    select 1 from public.appointments a
+    where public.can_access_appointment(a.id)
+      and (
+        exists (select 1 from public.student_profiles sp where sp.id = a.student_id and sp.user_id = target_user_id)
+        or exists (select 1 from public.instructor_profiles ip where ip.id = a.instructor_id and ip.user_id = target_user_id)
+        or exists (
+          select 1 from public.call_participants cp
+          where cp.appointment_id = a.id and cp.user_id = target_user_id
+        )
+      )
+  );
+$$;
+
+-- Replace the scalar/previous table form and grant room membership only after
+-- the exact code resolves to an approved appointment.
 drop function if exists public.appointment_id_for_call_code(text);
 create function public.appointment_id_for_call_code(code text)
 returns table(appointment_id uuid)
-language sql stable security definer set search_path = public as $$
-  select a.id as appointment_id
+language plpgsql security definer set search_path = public as $$
+declare matched_id uuid;
+begin
+  if auth.uid() is null then
+    return;
+  end if;
+  select a.id into matched_id
   from public.appointments a
   where regexp_replace(upper(coalesce(a.call_code, '')), '[^A-Z0-9]', '', 'g') =
         regexp_replace(upper(coalesce(code, '')), '[^A-Z0-9]', '', 'g')
     and a.status = 'approved'
   limit 1;
+  if matched_id is not null then
+    insert into public.call_participants (appointment_id, user_id)
+    values (matched_id, auth.uid())
+    on conflict (appointment_id, user_id) do nothing;
+    return query select matched_id;
+  end if;
+end;
 $$;
 revoke all on function public.appointment_id_for_call_code(text) from public;
 grant execute on function public.appointment_id_for_call_code(text) to authenticated;
@@ -112,31 +175,3 @@ begin
   return new;
 end;
 $$;
-
--- Add the student owning the code-matched appointment as an allowed participant
--- when looking up its appointment details.
-create or replace function public.shares_appointment(target_user_id uuid)
-returns boolean language sql stable security definer set search_path = public as $$
-  select exists (
-    select 1 from public.appointments a
-    join public.student_profiles sp on sp.id = a.student_id
-    where (a.student_id = public.current_student_profile_id()
-       or a.instructor_id = public.current_instructor_profile_id()
-       or public.is_admin())
-      and (sp.user_id = target_user_id or exists (
-        select 1 from public.appointments other
-        join public.student_profiles osp on osp.id = other.student_id
-        where other.call_code = a.call_code and osp.user_id = target_user_id
-      ))
-  );
-$$;
-
-drop policy if exists appt_select on public.appointments;
-create policy appt_select on public.appointments for select using (
-  student_id = public.current_student_profile_id()
-  or instructor_id = public.current_instructor_profile_id()
-  or public.is_admin()
-  or (call_code is not null and status = 'approved' and exists (
-    select 1 from public.student_profiles sp where sp.user_id = auth.uid()
-  ))
-);
