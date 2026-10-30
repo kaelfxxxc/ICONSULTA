@@ -57,9 +57,19 @@ export async function listInstructorBusySlots(
 }
 
 export async function findAppointmentByCallCode(code: string): Promise<string | null> {
-  const { data, error } = await supabase.rpc('appointment_id_for_call_code', { code })
+  const normalized = code.toUpperCase().replace(/[^A-Z0-9]/g, '')
+  const { data, error } = await supabase.rpc('appointment_id_for_call_code', { code: normalized })
   if (error) throw error
-  return typeof data === 'string' ? data : null
+  if (typeof data === 'string') return data
+  if (Array.isArray(data)) {
+    const row = data[0] as { appointment_id?: string; id?: string } | undefined
+    return row?.appointment_id ?? row?.id ?? null
+  }
+  if (data && typeof data === 'object') {
+    const row = data as { appointment_id?: string; id?: string }
+    return row.appointment_id ?? row.id ?? null
+  }
+  return null
 }
 
 export async function getAppointment(

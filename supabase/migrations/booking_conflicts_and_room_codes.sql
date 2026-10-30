@@ -73,10 +73,15 @@ where status = 'approved' and call_code is null;
 create unique index if not exists appointments_call_code_unique
   on public.appointments (call_code) where call_code is not null;
 
-create or replace function public.appointment_id_for_call_code(code text)
-returns uuid language sql stable security definer set search_path = public as $$
-  select id from public.appointments
-  where call_code = upper(trim(code)) and status = 'approved'
+drop function if exists public.appointment_id_for_call_code(text);
+create function public.appointment_id_for_call_code(code text)
+returns table(appointment_id uuid)
+language sql stable security definer set search_path = public as $$
+  select a.id as appointment_id
+  from public.appointments a
+  where regexp_replace(upper(coalesce(a.call_code, '')), '[^A-Z0-9]', '', 'g') =
+        regexp_replace(upper(coalesce(code, '')), '[^A-Z0-9]', '', 'g')
+    and a.status = 'approved'
   limit 1;
 $$;
 revoke all on function public.appointment_id_for_call_code(text) from public;
