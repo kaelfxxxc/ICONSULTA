@@ -3,6 +3,7 @@ import { useSupabaseQuery } from './useSupabaseQuery'
 import { qk } from './queryKeys'
 import {
   endSession,
+  generateAppointmentSummary,
   getSummary,
   getVideoSession,
   updateResolution,
@@ -36,6 +37,14 @@ export function useEndSession(appointmentId?: string) {
       void qc.invalidateQueries({ queryKey: qk.appointment(appointmentId) })
       void qc.invalidateQueries({ queryKey: ['appointments'] })
     },
+  })
+}
+
+export function useGenerateAppointmentSummary(appointmentId?: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: () => generateAppointmentSummary(appointmentId!),
+    onSettled: () => qc.invalidateQueries({ queryKey: qk.summary(appointmentId) }),
   })
 }
 

@@ -159,9 +159,13 @@ export async function cancelAppointment(id: string): Promise<void> {
 }
 
 export async function completeAppointment(id: string): Promise<void> {
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('appointments')
     .update({ status: 'completed' })
     .eq('id', id)
+    .eq('status', 'approved')
+    .select('id')
+    .maybeSingle()
   if (error) throw error
+  if (!data) throw new Error('This call has already ended.')
 }

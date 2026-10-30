@@ -1,11 +1,13 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../../context/authContext'
 import { useAppointment } from '../../hooks/useAppointments'
 import {
+  useGenerateAppointmentSummary,
   useAppointmentSummary,
   useEndSession,
 } from '../../hooks/useAppointmentSummary'
+import { startAppointmentCall } from '../../services/session.service'
 import { useWebRTC } from '../../hooks/useWebRTC'
 import { useLiveTranscript } from '../../hooks/useLiveTranscript'
 import { AiSummaryPanel } from '../../components/dashboard'
@@ -24,16 +26,18 @@ import {
 import { cn } from '../../lib/utils'
 import { ROLE_HOME } from '../../utils/constants'
 
-function useElapsed(active: boolean) {
-  const [seconds, setSeconds] = useState(0)
+function useElapsed(active: boolean, startedAt: string | null) {
+  const [now, setNow] = useState(Date.now())
   useEffect(() => {
     if (!active) return
-    const t = setInterval(() => setSeconds((s) => s + 1), 1000)
+    const t = setInterval(() => setNow(Date.now()), 1000)
     return () => clearInterval(t)
   }, [active])
-  const mm = String(Math.floor(seconds / 60)).padStart(2, '0')
+  const seconds = startedAt ? Math.max(0, Math.floor((now - Date.parse(startedAt)) / 1000)) : 0
+  const hours = Math.floor(seconds / 3600)
+  const mm = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0')
   const ss = String(seconds % 60).padStart(2, '0')
-  return `${mm}:${ss}`
+  return { seconds, label: `${hours ? `${hours}:` : ''}${mm}:${ss}` }
 }
 
 export default function VideoSession() {
@@ -44,10 +48,29 @@ export default function VideoSession() {
   const { data: appt, isLoading } = useAppointment(appointmentId)
   const { data: summary } = useAppointmentSummary(appointmentId)
   const endSession = useEndSession(appointmentId)
+  const retrySummary = useGenerateAppointmentSummary(appointmentId)
   const liveTranscript = useLiveTranscript()
   const [summaryError, setSummaryError] = useState<string | null>(null)
+  const [callStartedAt, setCallStartedAt] = useState<string | null>(null)
+  const [callLimitSetupError, setCallLimitSetupError] = useState<string | null>(null)
+  const [endedByLimit, setEndedByLimit] = useState(false)
+  const autoEndStarted = useRef(false)
 
   const ended = appt?.status === 'completed'
+
+  useEffect(() => {
+    if (!appointmentId || ended) return
+    let active = true
+    const localStart = new Date().toISOString()
+    void startAppointmentCall(appointmentId)
+      .then((startedAt) => { if (active) setCallStartedAt(startedAt) })
+      .catch((error: unknown) => {
+        if (!active) return
+        setCallStartedAt(localStart)
+        setCallLimitSetupError(error instanceof Error ? error.message : 'Could not sync the shared call timer.')
+      })
+    return () => { active = false }
+  }, [appointmentId, ended])
 
   // Real camera/mic + peer connection. Signaling rides Supabase Realtime on a
   // channel keyed by   the appointment, so both parties meet in the same room.
@@ -72,7 +95,7 @@ export default function VideoSession() {
     profile?.name || profile?.email?.split('@')[0] || 'Participant',
   )
 
-  const elapsed = useElapsed(!ended)
+  const elapsed = useElapsed(!ended, callStartedAt)
 
   const home = profile ? ROLE_HOME[profile.role] : '/'
   const isInstructor = profile?.role === 'instructor'
@@ -90,6 +113,18 @@ export default function VideoSession() {
       setSummaryError(error instanceof Error ? error.message : 'The session ended, but the transcript or summary could not be saved.')
     }
   }
+
+  useEffect(() => {
+    if (elapsed.seconds < 60 * 60 || ended || autoEndStarted.current) return
+    autoEndStarted.current = true
+    setEndedByLimit(true)
+    void handleEnd()
+  }, [elapsed.seconds, ended])
+
+  const retryableSummary = Boolean(
+    summary?.summary?.includes('once the AI summary has been generated') ||
+    summary?.summary?.includes('Gemini could not generate the summary'),
+  )
 
   if (isLoading) {
     return (
@@ -155,7 +190,7 @@ export default function VideoSession() {
                 )}
               />
               <span className={phase === 'connected' ? 'text-green-400' : 'text-red-400'}>
-                {phase === 'connected' ? `LIVE · ${elapsed}` : 'Connecting'}
+                {phase === 'connected' ? `LIVE · ${elapsed.label}` : 'Connecting'}
               </span>
             </span>
           ) : (
@@ -175,9 +210,21 @@ export default function VideoSession() {
       </header>
 
       {/* Body */}
-      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-y-contain p-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:gap-4 sm:p-4 lg:grid lg:grid-cols-3">
+      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-y-contain p-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:gap-4 sm:p-4 lg:grid lg:grid-cols-3 xl:grid-cols-4 xl:grid-rows-[minmax(0,1fr)] xl:overflow-hidden">
         {/* Video area */}
-        <div className="flex min-w-0 flex-col gap-2 sm:gap-4 lg:col-span-2">
+        <div className="flex min-w-0 flex-col gap-2 sm:gap-4 lg:col-span-2 xl:col-span-3 xl:min-h-0">
+          {!ended && elapsed.seconds >= 50 * 60 && (
+            <div role="alert" className="rounded-xl border border-amber-300/40 bg-amber-500/15 px-4 py-3 text-sm text-amber-100">
+              {elapsed.seconds < 60 * 60
+                ? '10 minutes remain. This call ends automatically at 60 minutes; start a new call to continue.'
+                : 'The 60-minute limit was reached. Ending this call…'}
+            </div>
+          )}
+          {callLimitSetupError && !ended && (
+            <div role="status" className="rounded-xl border border-amber-300/30 bg-amber-500/10 px-4 py-2 text-xs text-amber-100">
+              Shared call timer unavailable; this device is using a local timer. Apply the call limit SQL migration to synchronize the one-hour limit across participants.
+            </div>
+          )}
           {mediaError && !ended && (
             <div className="rounded-2xl border border-amber-400/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
               <span className="font-semibold">Camera / microphone unavailable. </span>
@@ -185,7 +232,7 @@ export default function VideoSession() {
             </div>
           )}
 
-          <div className="grid max-h-[52dvh] min-h-0 flex-none content-start auto-rows-min grid-cols-2 gap-2 overflow-y-auto overscroll-contain sm:max-h-[62dvh] sm:gap-4 xl:grid-cols-3">
+          <div className="grid max-h-[52dvh] min-h-0 flex-none content-start auto-rows-min grid-cols-2 gap-2 overflow-y-auto overscroll-contain sm:max-h-[62dvh] sm:gap-4 xl:my-auto xl:max-h-[calc(100dvh-10rem)] xl:grid-cols-2 xl:gap-4">
             <VideoTile
               name={`${selfName} (You)`}
               videoRef={setLocalVideoEl}
@@ -207,14 +254,14 @@ export default function VideoSession() {
               />
             ))}
             {participants.length === 0 && !ended && (
-              <div className="flex aspect-video min-h-0 items-center justify-center rounded-2xl border border-dashed border-white/15 px-2 text-center text-[10px] text-white/45 sm:px-3 sm:text-sm">
+              <div className="flex aspect-video min-h-0 items-center justify-center rounded-2xl border border-dashed border-white/15 px-2 text-center text-[10px] text-white/45 sm:px-3 sm:text-sm xl:aspect-video 2xl:aspect-[4/3]">
                 {connectionLabel ?? 'Share the call code to invite participants.'}
               </div>
             )}
           </div>
 
           {/* Control bar */}
-          <div className="flex shrink-0 flex-wrap items-center justify-center gap-1.5 rounded-2xl border border-white/10 bg-navy-900/95 p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:gap-3 sm:p-3">
+          <div className="flex shrink-0 flex-wrap items-center justify-center gap-1.5 rounded-2xl border border-white/10 bg-navy-900/95 p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:gap-3 sm:p-3 xl:mt-auto">
             <ControlButton
               active={micOn}
               onClick={toggleMic}
@@ -263,7 +310,7 @@ export default function VideoSession() {
         </div>
 
         {/* Side panel: transcript + summary */}
-        <div className="flex min-w-0 flex-col gap-3 sm:flex-row lg:flex-col">
+        <div className="flex min-w-0 flex-col gap-3 sm:flex-row lg:flex-col xl:col-span-1 xl:max-h-full xl:overflow-y-auto">
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2 text-sm font-semibold text-white/80">
@@ -304,11 +351,26 @@ export default function VideoSession() {
           </div>
 
           {ended ? (
-            <AiSummaryPanel
-              title="AI Summary"
-              summary={summary?.summary}
-              pending={!summary?.summary}
-            />
+            <div className="space-y-2">
+              <AiSummaryPanel
+                title="AI Summary"
+                summary={summary?.summary}
+                pending={!summary?.summary || retrySummary.isPending}
+              />
+              {retryableSummary && (
+                <button
+                  type="button"
+                  disabled={retrySummary.isPending}
+                  onClick={() => retrySummary.mutate()}
+                  className="rounded-lg border border-violet-300/30 bg-violet-500/10 px-3 py-2 text-sm font-medium text-violet-100 hover:bg-violet-500/20 disabled:opacity-50"
+                >
+                  {retrySummary.isPending ? 'Generating summary…' : 'Generate AI summary'}
+                </button>
+              )}
+              {endedByLimit && <p className="text-sm text-amber-200">This call ended at the 60-minute limit. Start a new call to continue.</p>}
+              {summaryError && <p role="alert" className="text-sm text-red-300">{summaryError}</p>}
+              {retrySummary.error && <p role="alert" className="text-sm text-red-300">{retrySummary.error.message}</p>}
+            </div>
           ) : (
             <div className="rounded-2xl border border-violet-400/30 bg-violet-500/10 p-5">
               <div className="flex items-center gap-2 text-violet-200">
@@ -353,7 +415,7 @@ function VideoTile({
   showPlaceholder?: boolean
 }) {
   return (
-    <div className="relative flex aspect-video min-h-0 w-full items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-navy-800 to-navy-950 ring-1 ring-white/10 sm:rounded-2xl">
+    <div className="relative flex aspect-video min-h-0 w-full items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-navy-800 to-navy-950 ring-1 ring-white/10 sm:rounded-2xl xl:aspect-video 2xl:aspect-[4/3]">
       {/* Real media. `muted` on self is required or the room echoes. */}
       <video
         ref={videoRef}
