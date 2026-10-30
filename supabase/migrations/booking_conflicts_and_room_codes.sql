@@ -68,7 +68,7 @@ create trigger trg_appointment_slot_guard
 -- authenticated students to join the same consultation room.
 alter table public.appointments add column if not exists call_code text;
 update public.appointments
-set call_code = upper(substr(encode(gen_random_bytes(5), 'hex'), 1, 8))
+set call_code = upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 8))
 where status = 'approved' and call_code is null;
 create unique index if not exists appointments_call_code_unique
   on public.appointments (call_code) where call_code is not null;
@@ -86,7 +86,7 @@ create or replace function public.assign_appointment_call_code()
 returns trigger language plpgsql set search_path = public as $$
 begin
   if new.status = 'approved' and new.call_code is null then
-    new.call_code := upper(substr(encode(gen_random_bytes(5), 'hex'), 1, 8));
+    new.call_code := upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 8));
   end if;
   return new;
 end;
@@ -95,6 +95,18 @@ drop trigger if exists trg_appointment_call_code on public.appointments;
 create trigger trg_appointment_call_code
   before insert or update of status on public.appointments
   for each row execute function public.assign_appointment_call_code();
+
+-- Safe to rerun after the initial migration: replace earlier definitions that
+-- depended on pgcrypto's gen_random_bytes function.
+create or replace function public.assign_appointment_call_code()
+returns trigger language plpgsql set search_path = public as $$
+begin
+  if new.status = 'approved' and new.call_code is null then
+    new.call_code := upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 8));
+  end if;
+  return new;
+end;
+$$;
 
 -- Add the student owning the code-matched appointment as an allowed participant
 -- when looking up its appointment details.
