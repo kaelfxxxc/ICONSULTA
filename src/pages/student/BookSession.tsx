@@ -80,7 +80,7 @@ export default function BookSession() {
   const { data: instructor, isLoading: loadingInstructor } =
     useInstructor(instructorId ?? undefined)
   const { data: availability } = useAvailability(instructorId ?? undefined)
-  const { data: busySlots } = useInstructorBusySlots(instructorId ?? undefined, date)
+  const { data: busySlots, isLoading: loadingBusySlots } = useInstructorBusySlots(instructorId ?? undefined, date)
   const create = useCreateAppointment()
 
   const daySlots = useMemo(() => {
@@ -89,7 +89,10 @@ export default function BookSession() {
     return availability
       .filter((s) => s.day_of_week === wd && s.is_available)
       .flatMap((s) => hourlySlots(s.start_time, s.end_time))
-      .filter((slot) => !(busySlots ?? []).includes(`${date}T${slot}:00`))
+      .filter((slot) => {
+        const key = `${date}T${slot}:00`
+        return !(busySlots ?? []).some((busy) => busy.startsWith(key))
+      })
       .sort()
   }, [date, availability, busySlots])
 
@@ -120,6 +123,7 @@ export default function BookSession() {
     return myTakenMinutes.some((m) => m >= start && m < start + 60)
   }
   const timeTaken = !!time && isSlotTaken(time)
+  const selectedSlotUnavailable = !!time && !daySlots.includes(time)
   const dayFull = daySlots.length > 0 && daySlots.every(isSlotTaken)
   const allInstructorSlotsTaken = daySlots.length === 0 &&
     (availability ?? []).some((s) => s.day_of_week === isoWeekday(date) && s.is_available) &&
@@ -133,6 +137,11 @@ export default function BookSession() {
       setError(
         'Your student profile is still loading. Refresh the page, and if this keeps happening contact an administrator.',
       )
+      return
+    }
+    if (selectedSlotUnavailable) {
+      setError('That instructor time is already booked. Please choose another slot.')
+      setTime('')
       return
     }
     if (timeTaken) {
@@ -354,12 +363,19 @@ export default function BookSession() {
             <button
               onClick={handleBook}
               disabled={
-                create.isPending || timeTaken || !time || !reason.trim()
+                create.isPending || loadingBusySlots || timeTaken ||
+                selectedSlotUnavailable || !studentId || !time || !reason.trim()
               }
               className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-navy-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-navy-800 disabled:cursor-not-allowed disabled:bg-navy-300"
             >
               {create.isPending ? (
                 'Requesting…'
+              ) : loadingBusySlots ? (
+                'Checking availability…'
+              ) : !time ? (
+                'Choose a time slot'
+              ) : !reason.trim() ? (
+                'Add a reason to continue'
               ) : (
                 <>
                   <CheckIcon className="h-4 w-4" /> Confirm Booking
