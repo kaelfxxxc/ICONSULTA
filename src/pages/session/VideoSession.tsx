@@ -127,13 +127,19 @@ export default function VideoSession() {
             <Brand compact />
           </div>
         </div>
-        <div className="flex min-w-0 items-center gap-2 sm:gap-8">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
           <div className="hidden md:block">
             <div className="max-w-48 truncate text-center text-sm font-semibold">
               {appt?.reason ?? 'Consultation'}
             </div>
             <div className="text-xs text-white/50">with {counterpartName}</div>
           </div>
+          {appt?.call_code && !ended && (
+            <div className="flex shrink-0 items-center gap-1.5 rounded-lg bg-white/10 px-2 py-1.5 text-[10px] text-white/70 sm:gap-2 sm:px-3 sm:text-xs">
+              <span className="hidden sm:inline">Code</span>
+              <span className="font-mono font-bold tracking-wider text-white">{appt.call_code}</span>
+            </div>
+          )}
           {!ended ? (
             <span className="inline-flex items-center gap-2 rounded-full bg-white/10 text-slate-950 px-3 py-1.5 text-xs font-medium">
               <span
@@ -194,8 +200,6 @@ export default function VideoSession() {
               </div>
             )}
           </div>
-
-          {appt?.call_code && <div className="rounded-xl bg-white/5 px-3 py-2 text-center text-xs text-white/70 sm:px-4 sm:py-3 sm:text-sm">Share code <span className="ml-2 rounded bg-white/10 px-2 py-1 font-mono font-bold tracking-widest text-white">{appt.call_code}</span> to invite participants.</div>}
 
           {/* Control bar */}
           <div className="sticky bottom-0 flex flex-wrap items-center justify-center gap-2 rounded-2xl border border-white/10 bg-navy-900/95 p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur sm:gap-3 sm:p-3">
