@@ -20,6 +20,7 @@ import {
 } from '../../components/common/icons'
 import { DEPARTMENT_LABEL } from '../../utils/constants'
 import { cn } from '../../lib/utils'
+import { useFindAppointmentByCallCode } from '../../hooks/useAppointments'
 import type { AppointmentStatus } from '../../types'
 
 type Tab = 'upcoming' | 'pending' | 'completed' | 'all'
@@ -38,6 +39,9 @@ export default function StudentAppointments() {
   const studentId = fp?.student?.id
   const { data: appts, isLoading } = useStudentAppointments(studentId)
   const cancel = useCancelAppointment(studentId)
+  const findByCode = useFindAppointmentByCallCode()
+  const [callCode, setCallCode] = useState('')
+  const [joinError, setJoinError] = useState('')
 
   const [tab, setTab] = useState<Tab>('upcoming')
   const [openSummary, setOpenSummary] = useState<string | null>(null)
@@ -61,7 +65,25 @@ export default function StudentAppointments() {
         </Link>
       </PageHeader>
 
-      <div className="mb-5 flex w-full gap-2 overflow-x-auto p-2 border border-[#e5ebf3] rounded-lg bg-white sm:w-max sm:flex-wrap sm:overflow-visible">
+      <SectionCard title="Join a group call" className="mb-5">
+        <form className="flex flex-wrap gap-2" onSubmit={async (e) => {
+          e.preventDefault()
+          setJoinError('')
+          try {
+            const id = await findByCode.mutateAsync(callCode.trim())
+            if (!id) { setJoinError('No active call matches that code.'); return }
+            navigate(`/session/${id}`)
+          } catch {
+            setJoinError('Could not find that call. Check the code and try again.')
+          }
+        }}>
+          <input value={callCode} onChange={(e) => setCallCode(e.target.value.toUpperCase())} maxLength={8} placeholder="Enter 8-character call code" className="min-w-60 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm uppercase" />
+          <button disabled={findByCode.isPending || callCode.trim().length < 4} className="rounded-lg bg-navy-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">{findByCode.isPending ? 'Joining…' : 'Join call'}</button>
+        </form>
+        {joinError && <p className="mt-2 text-sm text-red-600">{joinError}</p>}
+      </SectionCard>
+
+      <div className="mb-5 flex flex-wrap gap-2">
         {TABS.map((t) => {
           const count = (appts ?? []).filter((a) => t.match(a.status)).length
           return (

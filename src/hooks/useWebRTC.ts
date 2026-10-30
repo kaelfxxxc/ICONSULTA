@@ -114,6 +114,7 @@ export function useWebRTC(roomId: string | undefined, selfId: string | undefined
 
   const localStream = useRef<MediaStream | null>(null)
   const remoteStream = useRef<MediaStream | null>(null)
+  const [participants, setParticipants] = useState<Array<{ id: string; stream: MediaStream; micOn: boolean; camOff: boolean }>>([])
   const localVideoRef = useRef<HTMLVideoElement | null>(null)
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null)
 
@@ -220,7 +221,8 @@ export function useWebRTC(roomId: string | undefined, selfId: string | undefined
       setCamOn(stream.getVideoTracks().some((t) => t.enabled))
       bind(localVideoRef.current, stream)
 
-      // 2. Peer connection.
+      // 2. Peer connection. Each call room currently uses a single RTCPeerConnection;
+      // participant tracks are collected as peers are announced on the shared channel.
       const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS })
       pcRef.current = pc
       stream.getTracks().forEach((track) => pc.addTrack(track, stream))
@@ -283,6 +285,7 @@ export function useWebRTC(roomId: string | undefined, selfId: string | undefined
           if (t.kind === 'video') t.addEventListener('ended', syncRemoteVideo)
         })
         bind(remoteVideoRef.current, inbound)
+        setParticipants([{ id: remoteIdRef.current ?? 'participant', stream: inbound, micOn: true, camOff: false }])
         syncRemoteVideo()
         if (!cancelled) setPhase('connected')
       }
@@ -479,6 +482,7 @@ export function useWebRTC(roomId: string | undefined, selfId: string | undefined
         if (!p || p.from === selfId) return
         setRemoteMuted(!p.micOn)
         setRemoteCamOff(!p.camOn)
+        setParticipants((current) => current.map((participant) => participant.id === p.from ? { ...participant, micOn: p.micOn, camOff: !p.camOn } : participant))
       })
 
       channel.subscribe((status) => {
@@ -508,6 +512,7 @@ export function useWebRTC(roomId: string | undefined, selfId: string | undefined
       localStream.current?.getTracks().forEach((t) => t.stop())
       localStream.current = null
       remoteStream.current = null
+      setParticipants([])
       cameraTrack.current = null
       pendingIce.current = []
     }
@@ -610,6 +615,7 @@ export function useWebRTC(roomId: string | undefined, selfId: string | undefined
     remoteMuted,
     remoteCamOff,
     remoteVideoLive,
+    participants,
     setLocalVideoEl,
     setRemoteVideoEl,
     toggleMic,

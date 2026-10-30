@@ -4,6 +4,7 @@ import { useProfile } from '../../hooks/useProfile'
 import { useInstructor, useInstructors, useAvailability } from '../../hooks/useInstructors'
 import {
   useCreateAppointment,
+  useInstructorBusySlots,
   useStudentAppointments,
 } from '../../hooks/useAppointments'
 import {
@@ -79,6 +80,7 @@ export default function BookSession() {
   const { data: instructor, isLoading: loadingInstructor } =
     useInstructor(instructorId ?? undefined)
   const { data: availability } = useAvailability(instructorId ?? undefined)
+  const { data: busySlots } = useInstructorBusySlots(instructorId ?? undefined, date)
   const create = useCreateAppointment()
 
   const daySlots = useMemo(() => {
@@ -87,8 +89,9 @@ export default function BookSession() {
     return availability
       .filter((s) => s.day_of_week === wd && s.is_available)
       .flatMap((s) => hourlySlots(s.start_time, s.end_time))
+      .filter((slot) => !(busySlots ?? []).includes(`${date}T${slot}:00`))
       .sort()
-  }, [date, availability])
+  }, [date, availability, busySlots])
 
   const { data: myAppointments } = useStudentAppointments(studentId)
 
@@ -118,6 +121,9 @@ export default function BookSession() {
   }
   const timeTaken = !!time && isSlotTaken(time)
   const dayFull = daySlots.length > 0 && daySlots.every(isSlotTaken)
+  const allInstructorSlotsTaken = daySlots.length === 0 &&
+    (availability ?? []).some((s) => s.day_of_week === isoWeekday(date) && s.is_available) &&
+    !!busySlots && busySlots.length > 0
 
   async function handleBook() {
     setError(null)
@@ -237,9 +243,13 @@ export default function BookSession() {
                 Select a date first to see open slots.
               </p>
             ) : daySlots.length === 0 ? (
+              allInstructorSlotsTaken ? (
+                <p className="text-sm text-slate-500">All available hours are already booked. Try another date.</p>
+              ) : (
               <p className="text-sm text-slate-500">
                 No availability on this day. Try another date.
               </p>
+              )
             ) : (
               <>
                 {dayFull && (

@@ -183,6 +183,8 @@ export default function VideoSession() {
             />
           </div>
 
+          {appt?.call_code && <div className="rounded-xl bg-white/5 px-4 py-3 text-sm text-white/70">Share code <span className="ml-2 rounded bg-white/10 px-2 py-1 font-mono font-bold tracking-widest text-white">{appt.call_code}</span> with students who need to join.</div>}
+
           {/* Control bar */}
           <div className="flex items-center justify-center gap-3 rounded-2xl bg-white/5 p-3 flex-wrap">
             <ControlButton

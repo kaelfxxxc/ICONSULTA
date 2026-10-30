@@ -8,6 +8,8 @@ import {
   createAppointment,
   getAppointment,
   listInstructorAppointments,
+  listInstructorBusySlots,
+  findAppointmentByCallCode,
   listStudentAppointments,
   rejectAppointment,
 } from '../services/appointment.service'
@@ -28,6 +30,18 @@ export function useInstructorAppointments(instructorProfileId?: string) {
   )
 }
 
+export function useInstructorBusySlots(instructorProfileId?: string, date?: string) {
+  return useSupabaseQuery(
+    ['instructor-busy-slots', instructorProfileId, date],
+    () => listInstructorBusySlots(instructorProfileId!, date!),
+    { enabled: !!instructorProfileId && !!date },
+  )
+}
+
+export function useFindAppointmentByCallCode() {
+  return useMutation({ mutationFn: findAppointmentByCallCode })
+}
+
 export function useAppointment(id?: string) {
   return useSupabaseQuery(qk.appointment(id), () => getAppointment(id!), {
     enabled: !!id,
@@ -42,6 +56,7 @@ export function useCreateAppointment() {
       void qc.invalidateQueries({
         queryKey: qk.appointmentsStudent(vars.student_id),
       })
+      void qc.invalidateQueries({ queryKey: ['instructor-busy-slots', vars.instructor_id] })
     },
   })
 }

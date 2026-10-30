@@ -42,6 +42,26 @@ export async function listInstructorAppointments(
   return (data ?? []).map(normalize)
 }
 
+/** Busy hour keys are returned without student data, so booking can disable
+ * another student's slot while appointment rows remain party-private. */
+export async function listInstructorBusySlots(
+  instructorProfileId: string,
+  date: string,
+): Promise<string[]> {
+  const { data, error } = await supabase.rpc('instructor_busy_slots', {
+    target_instructor_id: instructorProfileId,
+    target_date: date,
+  })
+  if (error) throw error
+  return (data ?? []).map((row: { slot_time: string }) => row.slot_time)
+}
+
+export async function findAppointmentByCallCode(code: string): Promise<string | null> {
+  const { data, error } = await supabase.rpc('appointment_id_for_call_code', { code })
+  if (error) throw error
+  return typeof data === 'string' ? data : null
+}
+
 export async function getAppointment(
   id: string,
 ): Promise<AppointmentWithParties | null> {

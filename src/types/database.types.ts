@@ -80,6 +80,7 @@ export interface Appointment {
   status: AppointmentStatus
   mode: 'online'
   video_room_id: string | null
+  call_code: string | null
   rejection_reason: string | null
   instructor_notes: string | null
   created_at: string
