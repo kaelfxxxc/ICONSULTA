@@ -111,8 +111,8 @@ export default function VideoSession() {
   return (
     <div className="flex h-dvh min-h-0 flex-col overflow-hidden bg-navy-950 text-white">
       {/* Slim topbar */}
-      <header className="flex min-h-14 shrink-0 items-center justify-between gap-2 border-b border-white/10 px-2 sm:px-4">
-        <div className="flex items-center gap-1 sm:gap-3">
+      <header className="flex shrink-0 flex-wrap items-center gap-x-2 gap-y-1 border-b border-white/10 px-2 py-2 sm:min-h-14 sm:flex-nowrap sm:justify-between sm:px-4 sm:py-0">
+        <div className="flex min-w-0 items-center gap-1 sm:gap-3">
           <button
             onClick={() => navigate(home)}
             className="flex h-9 w-9 items-center justify-center rounded-lg text-white/70 transition hover:bg-white/10"
@@ -123,11 +123,11 @@ export default function VideoSession() {
           {/* The mark carries no size of its own, and `max-w-full` resolves against
               this box — so the width here is what actually scales the logo down
               from its 500px natural width to fit the slim topbar. */}
-          <div className="w-28 shrink-0 rounded-lg bg-slate-50 px-2 sm:m-2 sm:w-52 sm:rounded-2xl">
+          <div className="w-24 shrink-0 rounded-lg bg-slate-50 px-2 sm:m-2 sm:w-52 sm:rounded-2xl">
             <Brand compact />
           </div>
         </div>
-        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+        <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-3">
           <div className="hidden md:block">
             <div className="max-w-48 truncate text-center text-sm font-semibold">
               {appt?.reason ?? 'Consultation'}
@@ -135,13 +135,13 @@ export default function VideoSession() {
             <div className="text-xs text-white/50">with {counterpartName}</div>
           </div>
           {appt?.call_code && !ended && (
-            <div className="flex shrink-0 items-center gap-1.5 rounded-lg bg-white/10 px-2 py-1.5 text-[10px] text-white/70 sm:gap-2 sm:px-3 sm:text-xs">
+            <div className="hidden shrink-0 items-center gap-1.5 rounded-lg bg-white/10 px-2 py-1.5 text-[10px] text-white/70 sm:flex sm:gap-2 sm:px-3 sm:text-xs">
               <span className="hidden sm:inline">Code</span>
               <span className="font-mono font-bold tracking-wider text-white">{appt.call_code}</span>
             </div>
           )}
           {!ended ? (
-            <span className="inline-flex items-center gap-2 rounded-full bg-white/10 text-slate-950 px-3 py-1.5 text-xs font-medium">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2 py-1.5 text-[10px] font-medium sm:gap-2 sm:px-3 sm:text-xs">
               <span
                 className={cn(
                   'h-2 w-2 rounded-full',
@@ -155,17 +155,25 @@ export default function VideoSession() {
               </span>
             </span>
           ) : (
-            <span className="inline-flex items-center gap-2 rounded-full bg-emerald-500/20 px-3 py-1.5 text-xs font-medium text-emerald-300">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/20 px-2 py-1.5 text-[10px] font-medium text-emerald-300 sm:gap-2 sm:px-3 sm:text-xs">
               Session ended
             </span>
           )}
         </div>
+        {appt?.call_code && !ended && (
+          <div className="flex basis-full justify-center sm:hidden">
+            <div className="flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-1 text-[10px] text-white/70">
+              <span>Code</span>
+              <span className="font-mono font-bold tracking-wider text-white">{appt.call_code}</span>
+            </div>
+          </div>
+        )}
       </header>
 
       {/* Body */}
-      <div className="grid min-h-0 flex-1 gap-3 overflow-y-auto p-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:gap-4 sm:p-4 lg:grid-cols-3">
+      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-y-contain p-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:gap-4 sm:p-4 lg:grid lg:grid-cols-3">
         {/* Video area */}
-        <div className="flex min-h-0 flex-col gap-3 sm:gap-4 lg:col-span-2">
+        <div className="flex min-w-0 flex-col gap-2 sm:gap-4 lg:col-span-2">
           {mediaError && !ended && (
             <div className="rounded-2xl border border-amber-400/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
               <span className="font-semibold">Camera / microphone unavailable. </span>
@@ -173,7 +181,7 @@ export default function VideoSession() {
             </div>
           )}
 
-          <div className="grid max-h-[58dvh] min-h-0 flex-none content-start auto-rows-min grid-cols-2 gap-2 overflow-y-auto overscroll-contain sm:max-h-[62dvh] sm:gap-4 xl:grid-cols-3">
+          <div className="grid max-h-[52dvh] min-h-0 flex-none content-start auto-rows-min grid-cols-2 gap-2 overflow-y-auto overscroll-contain sm:max-h-[62dvh] sm:gap-4 xl:grid-cols-3">
             <VideoTile
               name={`${selfName} (You)`}
               videoRef={setLocalVideoEl}
@@ -195,14 +203,14 @@ export default function VideoSession() {
               />
             ))}
             {participants.length === 0 && !ended && (
-              <div className="flex aspect-video min-h-32 items-center justify-center rounded-2xl border border-dashed border-white/15 px-3 text-center text-xs text-white/45 sm:min-h-52 sm:text-sm">
+              <div className="flex aspect-video min-h-0 items-center justify-center rounded-2xl border border-dashed border-white/15 px-2 text-center text-[10px] text-white/45 sm:px-3 sm:text-sm">
                 {connectionLabel ?? 'Share the call code to invite participants.'}
               </div>
             )}
           </div>
 
           {/* Control bar */}
-          <div className="flex shrink-0 flex-wrap items-center justify-center gap-2 rounded-2xl border border-white/10 bg-navy-900/95 p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:gap-3 sm:p-3">
+          <div className="flex shrink-0 flex-wrap items-center justify-center gap-1.5 rounded-2xl border border-white/10 bg-navy-900/95 p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:gap-3 sm:p-3">
             <ControlButton
               active={micOn}
               onClick={toggleMic}
@@ -251,7 +259,7 @@ export default function VideoSession() {
         </div>
 
         {/* Side panel: transcript + summary */}
-        <div className="flex flex-col gap-4 sm:flex-row lg:flex-col">
+        <div className="flex min-w-0 flex-col gap-3 sm:flex-row lg:flex-col">
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
             <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-white/80">
               <span className="h-2 w-2 rounded-full bg-emerald-400" />
@@ -320,7 +328,7 @@ function VideoTile({
   showPlaceholder?: boolean
 }) {
   return (
-    <div className="relative flex aspect-video min-h-32 w-full items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-navy-800 to-navy-950 ring-1 ring-white/10 sm:min-h-56 sm:rounded-2xl">
+    <div className="relative flex aspect-video min-h-0 w-full items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-navy-800 to-navy-950 ring-1 ring-white/10 sm:rounded-2xl">
       {/* Real media. `muted` on self is required or the room echoes. */}
       <video
         ref={videoRef}
@@ -346,9 +354,9 @@ function VideoTile({
         </div>
       )}
 
-      <div className="absolute bottom-3 left-3 flex items-center gap-2 rounded-lg bg-black/40 px-2.5 py-1 text-xs font-medium backdrop-blur">
+      <div className="absolute bottom-1.5 left-1.5 flex max-w-[calc(100%-0.75rem)] items-center gap-1 rounded-lg bg-black/50 px-1.5 py-1 text-[10px] font-medium backdrop-blur sm:bottom-3 sm:left-3 sm:max-w-[calc(100%-1.5rem)] sm:gap-2 sm:px-2.5 sm:text-xs">
         {muted && <MicOffIcon className="h-3.5 w-3.5 text-red-400" />}
-        {name}
+        <span className="truncate">{name}</span>
       </div>
     </div>
   )
@@ -376,7 +384,7 @@ function ControlButton({
       title={label}
       aria-label={label}
       className={cn(
-        'flex h-12 w-12 items-center justify-center rounded-full transition disabled:opacity-40',
+        'flex h-10 w-10 items-center justify-center rounded-full transition disabled:opacity-40 sm:h-12 sm:w-12',
         active
           ? activeTone === 'brand'
             ? 'bg-brand-500 text-white hover:bg-brand-600'
