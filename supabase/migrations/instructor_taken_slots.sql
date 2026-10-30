@@ -1,14 +1,3 @@
--- Slot-level booking ---------------------------------------------------------
--- Hand this file to whoever manages the Supabase project. It is the backend
--- half of the "a booked slot shows greyed out for other students" feature;
--- the frontend alone cannot read other students' appointments (appt_select).
---
--- Apply with: supabase db push   (or paste into the SQL editor)
-
--- 1. Read taken slots ---------------------------------------------------------
--- Returns only instants — no student ids, names or reasons. Pending requests
--- count as booked, so Student 2 cannot take Student 1's 4:00 while it is still
--- waiting for the instructor's approval.
 create or replace function public.instructor_taken_slots(
   p_instructor_id uuid,
   p_from          timestamptz,
@@ -40,18 +29,37 @@ grant execute on function public.instructor_taken_slots(uuid, timestamptz, times
 -- A student can't attend two consultations at 4:00, even with different
 -- instructors. Tomorrow 4:00 is a different instant, so it stays free.
 --
--- If either index refuses to build, duplicates already exist — run these,
--- resolve them, then re-run:
---
---   select instructor_id, scheduled_at, count(*)
---   from public.appointments
---   where status in ('pending', 'approved')
---   group by 1, 2 having count(*) > 1;
---
---   select student_id, scheduled_at, count(*)
---   from public.appointments
---   where status in ('pending', 'approved')
---   group by 1, 2 having count(*) > 1;
+-- Retain the earliest active booking for each instructor/time and student/time
+-- before indexing. Keep duplicate records in history, but release their slots.
+with ranked as (
+  select id,
+         row_number() over (
+           partition by instructor_id, scheduled_at
+           order by created_at asc, id asc
+         ) as slot_rank
+  from public.appointments
+  where status in ('pending', 'approved')
+)
+update public.appointments a
+set status = 'cancelled',
+    rejection_reason = coalesce(a.rejection_reason, 'Cancelled because this instructor time was already reserved.')
+from ranked r
+where a.id = r.id and r.slot_rank > 1;
+
+with ranked as (
+  select id,
+         row_number() over (
+           partition by student_id, scheduled_at
+           order by created_at asc, id asc
+         ) as slot_rank
+  from public.appointments
+  where status in ('pending', 'approved')
+)
+update public.appointments a
+set status = 'cancelled',
+    rejection_reason = coalesce(a.rejection_reason, 'Cancelled because this student already has an appointment at that time.')
+from ranked r
+where a.id = r.id and r.slot_rank > 1;
 create unique index if not exists one_booking_per_instructor_slot
   on public.appointments (instructor_id, scheduled_at)
   where status in ('pending', 'approved');

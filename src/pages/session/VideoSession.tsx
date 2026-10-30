@@ -173,7 +173,7 @@ export default function VideoSession() {
             </div>
           )}
 
-          <div className="grid min-h-[42vh] flex-1 auto-rows-fr grid-cols-1 gap-2 sm:min-h-[50vh] sm:grid-cols-2 sm:gap-4 xl:grid-cols-3">
+          <div className="grid max-h-[58dvh] min-h-0 flex-none content-start auto-rows-min grid-cols-2 gap-2 overflow-y-auto overscroll-contain sm:max-h-[62dvh] sm:gap-4 xl:grid-cols-3">
             <VideoTile
               name={`${selfName} (You)`}
               videoRef={setLocalVideoEl}
@@ -195,14 +195,14 @@ export default function VideoSession() {
               />
             ))}
             {participants.length === 0 && !ended && (
-              <div className="flex min-h-40 items-center justify-center rounded-2xl border border-dashed border-white/15 px-4 text-center text-sm text-white/45 sm:min-h-52">
+              <div className="flex aspect-video min-h-32 items-center justify-center rounded-2xl border border-dashed border-white/15 px-3 text-center text-xs text-white/45 sm:min-h-52 sm:text-sm">
                 {connectionLabel ?? 'Share the call code to invite participants.'}
               </div>
             )}
           </div>
 
           {/* Control bar */}
-          <div className="sticky bottom-0 flex flex-wrap items-center justify-center gap-2 rounded-2xl border border-white/10 bg-navy-900/95 p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur sm:gap-3 sm:p-3">
+          <div className="flex shrink-0 flex-wrap items-center justify-center gap-2 rounded-2xl border border-white/10 bg-navy-900/95 p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:gap-3 sm:p-3">
             <ControlButton
               active={micOn}
               onClick={toggleMic}
@@ -241,10 +241,10 @@ export default function VideoSession() {
               <button
                 onClick={handleEnd}
                 disabled={endSession.isPending}
-                className="inline-flex min-h-11 items-center gap-2 rounded-full bg-red-600 px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-red-700 disabled:opacity-60 sm:ml-2 sm:px-5 sm:py-3 sm:text-sm"
+                className="inline-flex min-h-11 items-center gap-2 rounded-full bg-red-600 px-3 py-2.5 text-xs font-semibold text-white transition hover:bg-red-700 disabled:opacity-60 sm:ml-2 sm:px-5 sm:py-3 sm:text-sm"
               >
                 <PhoneOffIcon className="h-5 w-5" />
-                {endSession.isPending ? 'Ending…' : 'End Session & Summarize'}
+                {endSession.isPending ? 'Ending…' : <><span className="sm:hidden">End call</span><span className="hidden sm:inline">End Session &amp; Summarize</span></>}
               </button>
             )}
           </div>
@@ -320,7 +320,7 @@ function VideoTile({
   showPlaceholder?: boolean
 }) {
   return (
-    <div className="relative flex aspect-video min-h-40 w-full items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-navy-800 to-navy-950 ring-1 ring-white/10 sm:min-h-56 sm:rounded-2xl">
+    <div className="relative flex aspect-video min-h-32 w-full items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-navy-800 to-navy-950 ring-1 ring-white/10 sm:min-h-56 sm:rounded-2xl">
       {/* Real media. `muted` on self is required or the room echoes. */}
       <video
         ref={videoRef}
