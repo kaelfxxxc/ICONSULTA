@@ -7,6 +7,7 @@ import {
   useEndSession,
 } from '../../hooks/useAppointmentSummary'
 import { useWebRTC } from '../../hooks/useWebRTC'
+import { useLiveTranscript } from '../../hooks/useLiveTranscript'
 import { AiSummaryPanel } from '../../components/dashboard'
 import { Avatar, Loader } from '../../components/common'
 import { Brand } from '../../components/layout/Sidebar'
@@ -43,6 +44,8 @@ export default function VideoSession() {
   const { data: appt, isLoading } = useAppointment(appointmentId)
   const { data: summary } = useAppointmentSummary(appointmentId)
   const endSession = useEndSession(appointmentId)
+  const liveTranscript = useLiveTranscript()
+  const [summaryError, setSummaryError] = useState<string | null>(null)
 
   const ended = appt?.status === 'completed'
 
@@ -79,11 +82,12 @@ export default function VideoSession() {
     : (appt?.instructor?.user?.name ?? 'Instructor')
 
   async function handleEnd() {
+    liveTranscript.stop()
     stopAll()
     try {
-      await endSession.mutateAsync()
-    } catch {
-      // Even if summary generation is unavailable, the appointment is completed.
+      await endSession.mutateAsync(liveTranscript.getTranscript())
+    } catch (error) {
+      setSummaryError(error instanceof Error ? error.message : 'The session ended, but the transcript or summary could not be saved.')
     }
   }
 
@@ -261,21 +265,42 @@ export default function VideoSession() {
         {/* Side panel: transcript + summary */}
         <div className="flex min-w-0 flex-col gap-3 sm:flex-row lg:flex-col">
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-            <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-white/80">
-              <span className="h-2 w-2 rounded-full bg-emerald-400" />
-              Live Transcript
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-sm font-semibold text-white/80">
+                <span className={cn('h-2 w-2 rounded-full', liveTranscript.listening ? 'animate-pulse bg-red-400' : 'bg-emerald-400')} />
+                Live Transcript
+              </div>
+              {!ended && liveTranscript.supported && (
+                <button
+                  type="button"
+                  onClick={liveTranscript.listening ? liveTranscript.stop : liveTranscript.start}
+                  className="rounded-lg border border-white/15 px-2.5 py-1.5 text-xs font-medium text-white/80 transition hover:bg-white/10"
+                >
+                  {liveTranscript.listening ? 'Pause transcript' : liveTranscript.transcript ? 'Resume transcript' : 'Start transcript'}
+                </button>
+              )}
             </div>
-            {summary?.transcript ? (
+            {summary?.transcript || liveTranscript.transcript || liveTranscript.interim ? (
               <p className="max-h-48 overflow-y-auto whitespace-pre-line text-sm leading-relaxed text-white/70">
-                {summary.transcript}
+                {summary?.transcript ?? liveTranscript.transcript}
+                {liveTranscript.interim && <span className="text-white/40"> {liveTranscript.interim}</span>}
               </p>
             ) : (
-              <p className="text-sm text-white/40">
-                {ended
-                  ? 'No transcript was captured for this session.'
-                  : 'Transcript will be captured during the consultation…'}
-              </p>
+              <div className="space-y-2">
+                <p className="text-sm text-white/50">
+                  {ended
+                    ? summary?.transcript ?? 'No transcript was captured for this session.'
+                    : liveTranscript.supported
+                      ? 'Start transcription when everyone is ready. Captions will appear here as you speak.'
+                      : 'Live transcription is not supported by this browser. Try Chrome or Edge on a supported device.'}
+                </p>
+                {!ended && liveTranscript.supported && (
+                  <p className="text-xs text-white/35">Transcription uses this device’s speech recognition. Let other participants know before starting.</p>
+                )}
+              </div>
             )}
+            {liveTranscript.error && <p className="mt-2 text-xs text-amber-300">{liveTranscript.error}</p>}
+            {summaryError && <p className="mt-2 text-xs text-amber-300">{summaryError}</p>}
           </div>
 
           {ended ? (

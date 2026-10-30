@@ -1,7 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-const HF_MODEL = 'facebook/bart-large-cnn'
-const HF_ENDPOINT = `https://api-inference.huggingface.co/models/${HF_MODEL}`
+const GEMINI_MODEL = 'gemini-2.5-flash'
+const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -23,7 +23,7 @@ Deno.serve(async (req) => {
 
   const SUPABASE_URL = Deno.env.get('SUPABASE_URL')
   const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-  const HF_API_KEY = Deno.env.get('HF_API_KEY')
+  const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY')
   if (!SUPABASE_URL || !SERVICE_ROLE) {
     return json({ error: 'Server not configured' }, 500)
   }
@@ -71,7 +71,14 @@ Deno.serve(async (req) => {
 
   const studentUser = (appt as Record<string, any>).student?.user
   const instructorUser = (appt as Record<string, any>).instructor?.user
-  const isParty = user.id === studentUser?.id || user.id === instructorUser?.id
+  const { data: callParticipant } = await admin
+    .from('call_participants')
+    .select('user_id')
+    .eq('appointment_id', appointmentId)
+    .eq('user_id', user.id)
+    .maybeSingle()
+  const isParty =
+    user.id === studentUser?.id || user.id === instructorUser?.id || !!callParticipant
   if (!isParty) return json({ error: 'Forbidden' }, 403)
 
   // Pull any captured transcript from the (trigger-bootstrapped) summary row.
@@ -89,34 +96,44 @@ Deno.serve(async (req) => {
   }`
 
   let summary: string | null = null
+  let generatedWithGemini = false
 
-  // Real AI summarization only makes sense when we have a transcript to condense
-  // and a key to call the model. Otherwise we compose a clean professional
-  // summary from the appointment metadata (better than a hallucinated one).
-  if (HF_API_KEY && transcript && transcript.trim().length > 40) {
+  // Generate only from recorded speech. Never infer discussion points that
+  // aren't present in the transcript.
+  if (GEMINI_API_KEY && transcript?.trim()) {
     try {
       const controller = new AbortController()
       const timeout = setTimeout(() => controller.abort(), 20_000)
-      const res = await fetch(HF_ENDPOINT, {
+      const res = await fetch(GEMINI_ENDPOINT, {
         method: 'POST',
         signal: controller.signal,
         headers: {
-          Authorization: `Bearer ${HF_API_KEY}`,
+          'x-goog-api-key': GEMINI_API_KEY,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          inputs: transcript.slice(0, 6000),
-          parameters: { max_length: 220, min_length: 60, do_sample: false },
-          options: { wait_for_model: true },
+          contents: [{
+            role: 'user',
+            parts: [{ text:
+              `Create a concise, factual consultation summary based only on the transcript below. ` +
+              `Include the student's main questions, instructor guidance, and agreed next steps when stated. ` +
+              `Do not invent facts or advice. Appointment topic: "${reason}". ` +
+              `Participants: ${withWhom}.\n\nTranscript:\n${transcript.slice(0, 24000)}`,
+            }],
+          }],
+          generationConfig: { temperature: 0.2, maxOutputTokens: 500 },
         }),
       })
       clearTimeout(timeout)
       if (res.ok) {
         const out = await res.json()
-        const text = Array.isArray(out)
-          ? out[0]?.summary_text
-          : out?.summary_text
-        if (text && typeof text === 'string') summary = text.trim()
+        const text = out?.candidates?.[0]?.content?.parts
+          ?.map((part: { text?: string }) => part.text ?? '')
+          .join(' ')
+        if (text && typeof text === 'string') {
+          summary = text.trim()
+          generatedWithGemini = !!summary
+        }
       }
     } catch {
       // fall through to the composed summary below
@@ -124,12 +141,9 @@ Deno.serve(async (req) => {
   }
 
   if (!summary) {
-    // No transcript / no key / model unavailable — compose from metadata.
-    summary =
-      `Consultation between ${withWhom} regarding "${reason}" has concluded. ` +
-      `The session covered the student's questions on this topic, with the ` +
-      `instructor providing guidance and recommended next steps. Action items ` +
-      `and follow-ups agreed during the meeting should be reviewed by both parties.`
+    summary = transcript?.trim()
+      ? 'The transcript was saved, but Gemini could not generate the summary. Check the Gemini API key and try again.'
+      : 'No transcript was captured for this session, so a factual summary could not be generated.'
   }
 
   // --- persist (upsert keeps this idempotent with the 0006 trigger row) -----
@@ -143,5 +157,9 @@ Deno.serve(async (req) => {
     .eq('appointment_id', appointmentId)
   if (upErr) return json({ error: upErr.message }, 500)
 
-  return json({ ok: true, appointment_id: appointmentId, source: transcript ? 'ai' : 'composed' })
+  return json({
+    ok: true,
+    appointment_id: appointmentId,
+    source: generatedWithGemini ? 'gemini' : 'unavailable',
+  })
 })
