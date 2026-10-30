@@ -21,7 +21,9 @@ export function InstallAppButton() {
   const [installed, setInstalled] = useState(false)
 
   useEffect(() => {
-    setInstalled(isStandalone())
+    const alreadyInstalled = isStandalone()
+    setInstalled(alreadyInstalled)
+    if (!alreadyInstalled) setHelpOpen(true)
     const onBeforeInstall = (event: Event) => {
       event.preventDefault()
       setInstallPrompt(event as InstallPromptEvent)
@@ -29,6 +31,7 @@ export function InstallAppButton() {
     const onInstalled = () => {
       setInstalled(true)
       setInstallPrompt(null)
+      setHelpOpen(false)
     }
     window.addEventListener('beforeinstallprompt', onBeforeInstall)
     window.addEventListener('appinstalled', onInstalled)
@@ -41,13 +44,16 @@ export function InstallAppButton() {
   if (installed) return null
 
   async function install() {
-    if (!installPrompt) {
-      setHelpOpen(true)
-      return
-    }
+    if (!installPrompt) return
     await installPrompt.prompt()
     const choice = await installPrompt.userChoice
-    if (choice.outcome === 'accepted') setInstalled(true)
+    if (choice.outcome === 'accepted') {
+      setInstalled(true)
+      setHelpOpen(false)
+    } else {
+      // The browser may offer installation again on the next visit.
+      setHelpOpen(false)
+    }
     setInstallPrompt(null)
   }
 
@@ -75,12 +81,18 @@ export function InstallAppButton() {
                 <p className="mt-1 text-sm text-slate-600">
                   {isAppleMobile()
                     ? 'In Safari, tap Share, then Add to Home Screen.'
-                    : 'Open your browser menu and choose Install app or Add to Home screen.'}
+                    : installPrompt
+                      ? 'Add ICONSULTA to your home screen for quick access.'
+                      : 'Open your browser menu and choose Install app or Add to Home screen.'}
                 </p>
               </div>
               <button type="button" onClick={() => setHelpOpen(false)} className="rounded-lg px-2 py-1 text-slate-500 hover:bg-slate-100" aria-label="Close install instructions">✕</button>
             </div>
-            <button type="button" onClick={() => setHelpOpen(false)} className="mt-4 w-full rounded-lg bg-navy-900 px-4 py-2.5 text-sm font-semibold text-white">Got it</button>
+            {installPrompt ? (
+              <button type="button" onClick={() => void install()} className="mt-4 w-full rounded-lg bg-navy-900 px-4 py-2.5 text-sm font-semibold text-white">Install ICONSULTA</button>
+            ) : (
+              <button type="button" onClick={() => setHelpOpen(false)} className="mt-4 w-full rounded-lg bg-navy-900 px-4 py-2.5 text-sm font-semibold text-white">Got it</button>
+            )}
           </section>
         </div>
       )}

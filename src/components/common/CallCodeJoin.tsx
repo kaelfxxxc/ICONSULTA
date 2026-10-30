@@ -1,11 +1,15 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useFindAppointmentByCallCode } from '../../hooks/useAppointments'
+import { useQueryClient } from '@tanstack/react-query'
+import { useFindAppointmentByCallCode, useMyJoinedCalls } from '../../hooks/useAppointments'
 import { SectionCard } from './Section'
+import { formatDateTime } from '../../lib/utils'
 
 export function CallCodeJoin() {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const findByCode = useFindAppointmentByCallCode()
+  const { data: joinedCalls } = useMyJoinedCalls()
   const [code, setCode] = useState('')
   const [error, setError] = useState('')
 
@@ -18,7 +22,9 @@ export function CallCodeJoin() {
         setError('No approved call matches that code. Check it and try again.')
         return
       }
+      void queryClient.invalidateQueries({ queryKey: ['joined-call-rooms'] })
       navigate(`/session/${appointmentId}`)
+      setCode('')
     } catch {
       setError('Could not join this call. Please check the code and try again.')
     }
@@ -46,6 +52,28 @@ export function CallCodeJoin() {
       </form>
       {error && <p role="alert" className="mt-2 text-sm text-red-600">{error}</p>}
       <p className="mt-2 text-xs text-slate-500">Enter the code shared by the meeting host. You must be signed in.</p>
+      {!!joinedCalls?.length && (
+        <div className="mt-4 border-t border-slate-100 pt-4">
+          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Your joined calls</h3>
+          <div className="space-y-2">
+            {joinedCalls.map((call) => (
+              <div key={call.appointment_id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-slate-50 px-3 py-2">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-slate-800">{call.reason || 'Consultation call'}</p>
+                  <p className="text-xs text-slate-500">{formatDateTime(call.scheduled_at)} · Code {call.call_code}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => navigate(`/session/${call.appointment_id}`)}
+                  className="rounded-lg bg-navy-900 px-3 py-2 text-xs font-semibold text-white hover:bg-navy-800"
+                >
+                  Rejoin
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </SectionCard>
   )
 }

@@ -60,16 +60,41 @@ export async function findAppointmentByCallCode(code: string): Promise<string | 
   const normalized = code.toUpperCase().replace(/[^A-Z0-9]/g, '')
   const { data, error } = await supabase.rpc('appointment_id_for_call_code', { code: normalized })
   if (error) throw error
-  if (typeof data === 'string') return data
-  if (Array.isArray(data)) {
-    const row = data[0] as { appointment_id?: string; id?: string } | undefined
-    return row?.appointment_id ?? row?.id ?? null
-  }
-  if (data && typeof data === 'object') {
-    const row = data as { appointment_id?: string; id?: string }
-    return row.appointment_id ?? row.id ?? null
+  return extractAppointmentId(data)
+}
+
+function extractAppointmentId(value: unknown): string | null {
+  if (typeof value === 'string') return /^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(value) ? value : null
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const found = extractAppointmentId(item)
+      if (found) return found
+    }
+  } else if (value && typeof value === 'object') {
+    const row = value as Record<string, unknown>
+    for (const key of ['appointment_id', 'id', 'appointment_id_for_call_code']) {
+      const found = extractAppointmentId(row[key])
+      if (found) return found
+    }
+    for (const nested of Object.values(row)) {
+      const found = extractAppointmentId(nested)
+      if (found) return found
+    }
   }
   return null
+}
+
+export interface JoinedCall {
+  appointment_id: string
+  call_code: string
+  reason: string | null
+  scheduled_at: string
+}
+
+export async function listMyJoinedCalls(): Promise<JoinedCall[]> {
+  const { data, error } = await supabase.rpc('my_joined_call_rooms')
+  if (error) throw error
+  return (data ?? []) as JoinedCall[]
 }
 
 export async function getAppointment(

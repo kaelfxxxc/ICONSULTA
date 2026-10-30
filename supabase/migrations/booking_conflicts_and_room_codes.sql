@@ -150,6 +150,23 @@ $$;
 revoke all on function public.appointment_id_for_call_code(text) from public;
 grant execute on function public.appointment_id_for_call_code(text) to authenticated;
 
+create or replace function public.my_joined_call_rooms()
+returns table(
+  appointment_id uuid,
+  call_code text,
+  reason varchar,
+  scheduled_at timestamptz
+)
+language sql stable security definer set search_path = public as $$
+  select a.id, a.call_code, a.reason, a.scheduled_at
+  from public.call_participants cp
+  join public.appointments a on a.id = cp.appointment_id
+  where cp.user_id = auth.uid() and a.status = 'approved'
+  order by a.scheduled_at desc;
+$$;
+revoke all on function public.my_joined_call_rooms() from public;
+grant execute on function public.my_joined_call_rooms() to authenticated;
+
 create or replace function public.assign_appointment_call_code()
 returns trigger language plpgsql set search_path = public as $$
 begin

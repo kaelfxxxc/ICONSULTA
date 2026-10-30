@@ -63,7 +63,11 @@ export default function VideoSession() {
     toggleCam,
     toggleShare,
     stopAll,
-  } = useWebRTC(ended ? undefined : appointmentId, profile?.id, profile?.name)
+  } = useWebRTC(
+    ended ? undefined : appointmentId,
+    profile?.id,
+    profile?.name || profile?.email?.split('@')[0] || 'Participant',
+  )
 
   const elapsed = useElapsed(!ended)
 

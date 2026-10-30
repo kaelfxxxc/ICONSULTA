@@ -8,7 +8,8 @@ export interface MediaError { kind: MediaErrorKind; message: string }
 export interface CallParticipant { id: string; name: string; stream: MediaStream; micOn: boolean; camOff: boolean }
 
 type Signal =
-  | { type: 'hello' | 'hello-ack' | 'bye'; from: string; to: string }
+  | { type: 'hello' | 'hello-ack'; from: string; to: string; name: string }
+  | { type: 'bye'; from: string; to: string }
   | { type: 'offer' | 'answer'; from: string; to: string; sdp: RTCSessionDescriptionInit }
   | { type: 'ice'; from: string; to: string; candidate: RTCIceCandidateInit }
 type ParticipantState = { from: string; to: string; micOn: boolean; camOn: boolean }
@@ -90,14 +91,25 @@ export function useWebRTC(roomId: string | undefined, selfId: string | undefined
     const createPeer = (id: string, name = 'Guest') => {
       const existing = peers.current.get(id)
       if (existing) {
-        if (name && name !== 'Guest') existing.name = name
+        if (name && name !== 'Guest' && existing.name !== name) {
+          existing.name = name
+          publishParticipants()
+        }
         return existing
       }
       const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS })
       const remote = new MediaStream()
       const peer: Peer = { pc, stream: remote, name, micOn: true, camOff: false, makingOffer: false, pendingIce: [] }
       peers.current.set(id, peer)
-      stream.getTracks().forEach((track) => pc.addTrack(track, stream))
+      stream.getTracks().forEach((track) => {
+        const sender = pc.addTrack(track, stream)
+        if (track.kind !== 'video') return
+        const params = sender.getParameters()
+        params.encodings = params.encodings?.length ? params.encodings : [{}]
+        params.encodings[0].maxBitrate = window.matchMedia('(max-width: 640px)').matches ? 550_000 : 1_500_000
+        params.encodings[0].scaleResolutionDownBy = peers.current.size > 2 ? 1.5 : 1
+        void sender.setParameters(params).catch(() => {})
+      })
       pc.ontrack = (event) => {
         const incoming = event.streams[0]?.getTracks() ?? [event.track]
         for (const track of incoming) if (!remote.getTracks().some((t) => t.id === track.id)) remote.addTrack(track)
@@ -129,7 +141,7 @@ export function useWebRTC(roomId: string | undefined, selfId: string | undefined
     const joinPeer = (id: string, name = 'Guest') => {
       if (!id || id === selfId) return
       createPeer(id, name)
-      sendSignal({ type: 'hello', from: selfId, to: id })
+      sendSignal({ type: 'hello', from: selfId, to: id, name: selfName })
     }
 
     async function start() {
@@ -137,8 +149,14 @@ export function useWebRTC(roomId: string | undefined, selfId: string | undefined
       setMediaError(null)
       try {
         if (!navigator.mediaDevices?.getUserMedia) throw new Error('unsupported')
+        const mobileDevice = window.matchMedia('(max-width: 640px)').matches
         stream = await navigator.mediaDevices.getUserMedia({
-          video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' },
+          video: {
+            width: { ideal: mobileDevice ? 640 : 1280 },
+            height: { ideal: mobileDevice ? 480 : 720 },
+            frameRate: { ideal: mobileDevice ? 24 : 30, max: 30 },
+            facingMode: 'user',
+          },
           audio: { echoCancellation: true, noiseSuppression: true },
         })
       } catch (err) {
@@ -163,12 +181,12 @@ export function useWebRTC(roomId: string | undefined, selfId: string | undefined
         try {
           if (msg.type === 'hello') {
             const state = channel.presenceState() as Record<string, Array<{ name?: string }>>
-            const name = state[msg.from]?.[0]?.name ?? 'Guest'
+            const name = msg.name || state[msg.from]?.[0]?.name || 'Guest'
             createPeer(msg.from, name)
-            sendSignal({ type: 'hello-ack', from: selfId, to: msg.from })
+            sendSignal({ type: 'hello-ack', from: selfId, to: msg.from, name: selfName })
             await makeOffer(msg.from)
           } else if (msg.type === 'hello-ack') {
-            createPeer(msg.from)
+            createPeer(msg.from, msg.name)
             await makeOffer(msg.from)
           } else if (msg.type === 'offer' || msg.type === 'answer') {
             const peer = createPeer(msg.from)

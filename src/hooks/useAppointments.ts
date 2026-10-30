@@ -10,6 +10,7 @@ import {
   listInstructorAppointments,
   listInstructorBusySlots,
   findAppointmentByCallCode,
+  listMyJoinedCalls,
   listStudentAppointments,
   rejectAppointment,
 } from '../services/appointment.service'
@@ -40,6 +41,10 @@ export function useInstructorBusySlots(instructorProfileId?: string, date?: stri
 
 export function useFindAppointmentByCallCode() {
   return useMutation({ mutationFn: findAppointmentByCallCode })
+}
+
+export function useMyJoinedCalls() {
+  return useSupabaseQuery(['joined-call-rooms'], listMyJoinedCalls)
 }
 
 export function useAppointment(id?: string) {
