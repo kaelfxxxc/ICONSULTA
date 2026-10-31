@@ -1,7 +1,6 @@
 import { supabase } from '../lib/supabase'
 import type { InstructorAvailability } from '../types'
 
-/** Weekly availability for an instructor (readable by all authenticated). */
 export async function listAvailability(
   instructorProfileId: string,
 ): Promise<InstructorAvailability[]> {
@@ -36,6 +35,7 @@ export async function listAllAvailability(): Promise<InstructorAvailability[]> {
 /** Owner-only (RLS availability_write_owner). */
 export async function addAvailability(input: {
   instructor_id: string
+  available_date?: string
   day_of_week: number
   start_time: string
   end_time: string

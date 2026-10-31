@@ -82,19 +82,27 @@ export default function BookSession() {
   const { data: availability } = useAvailability(instructorId ?? undefined)
   const { data: busySlots, isLoading: loadingBusySlots } = useInstructorBusySlots(instructorId ?? undefined, date)
   const create = useCreateAppointment()
+  const hasDateSpecificAvailability = useMemo(
+    () => (availability ?? []).some((slot) => slot.available_date),
+    [availability],
+  )
 
   const daySlots = useMemo(() => {
     if (!date || !availability) return []
     const wd = isoWeekday(date)
     return availability
-      .filter((s) => s.day_of_week === wd && s.is_available)
+      .filter((s) =>
+        hasDateSpecificAvailability
+          ? s.available_date === date && s.is_available
+          : s.day_of_week === wd && s.is_available,
+      )
       .flatMap((s) => hourlySlots(s.start_time, s.end_time))
       .filter((slot) => {
         const key = `${date}T${slot}:00`
         return !(busySlots ?? []).some((busy) => busy.startsWith(key))
       })
       .sort()
-  }, [date, availability, busySlots])
+  }, [date, availability, busySlots, hasDateSpecificAvailability])
 
   const { data: myAppointments } = useStudentAppointments(studentId)
 
@@ -126,7 +134,11 @@ export default function BookSession() {
   const selectedSlotUnavailable = !!time && !daySlots.includes(time)
   const dayFull = daySlots.length > 0 && daySlots.every(isSlotTaken)
   const allInstructorSlotsTaken = daySlots.length === 0 &&
-    (availability ?? []).some((s) => s.day_of_week === isoWeekday(date) && s.is_available) &&
+    (availability ?? []).some((s) =>
+      hasDateSpecificAvailability
+        ? s.available_date === date && s.is_available
+        : s.day_of_week === isoWeekday(date) && s.is_available,
+    ) &&
     !!busySlots && busySlots.length > 0
 
   async function handleBook() {
@@ -241,7 +253,7 @@ export default function BookSession() {
             {date && (
               <p className="mt-2 text-xs text-slate-500">
                 {DAY_NAMES[isoWeekday(date)]} — showing this instructor&rsquo;s
-                available hours.
+                calendar availability.
               </p>
             )}
           </SectionCard>

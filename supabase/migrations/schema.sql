@@ -54,6 +54,7 @@ create table if not exists public.admin_users (
 create table if not exists public.instructor_availability (
   id            uuid primary key default gen_random_uuid(),
   instructor_id uuid not null references public.instructor_profiles(id) on delete cascade,
+  available_date date,
   day_of_week   int not null check (day_of_week between 1 and 7),
   start_time    time not null,
   end_time      time not null,

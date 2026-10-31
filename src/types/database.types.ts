@@ -63,7 +63,8 @@ export interface AdminUser {
 export interface InstructorAvailability {
   id: string
   instructor_id: string
-  day_of_week: number // 1 = Monday … 7 = Sunday
+  available_date: string | null // "YYYY-MM-DD"; null for legacy weekly rows
+  day_of_week: number // 1 = Monday … 7 = Sunday (legacy fallback and indexing)
   start_time: string // "HH:MM:SS"
   end_time: string
   is_available: boolean

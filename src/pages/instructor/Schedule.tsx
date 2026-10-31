@@ -19,6 +19,12 @@ import { formatTime } from '../../lib/utils'
 import type { InstructorAvailability } from '../../types'
 
 const DAYS = [1, 2, 3, 4, 5, 6, 7]
+const today = new Date().toISOString().slice(0, 10)
+
+function isoWeekday(dateStr: string): number {
+  const day = new Date(`${dateStr}T00:00:00`).getDay()
+  return day === 0 ? 7 : day
+}
 
 export default function InstructorSchedule() {
   const { data: fp } = useProfile()
@@ -27,7 +33,7 @@ export default function InstructorSchedule() {
   const { data: availability, isLoading } = useAvailability(instructorId)
   const { add, remove } = useAvailabilityEditor(instructorId)
 
-  const [day, setDay] = useState(1)
+  const [date, setDate] = useState(today)
   const [start, setStart] = useState('09:00')
   const [end, setEnd] = useState('10:00')
   const [error, setError] = useState<string | null>(null)
@@ -67,20 +73,16 @@ export default function InstructorSchedule() {
 
     const slotStart = `${start}:00`
     const slotEnd = `${end}:00`
-    // Only an exact repeat is refused — same weekday, same start, same end.
-    // Anything that merely overlaps is fine, so 10:00–12:00 can still sit
-    // alongside a 10:00–13:00 slot on the same day.
+    const day = isoWeekday(date)
     const duplicate = (availability ?? []).some(
       (s) =>
-        s.day_of_week === day &&
+        s.available_date === date &&
         s.start_time === slotStart &&
         s.end_time === slotEnd,
     )
     if (duplicate) {
       setError(
-        `${DAY_NAMES[day]} already has a ${formatTime(slotStart)}–${formatTime(
-          slotEnd,
-        )} slot.`,
+        `${date} already has a ${formatTime(slotStart)}–${formatTime(slotEnd)} slot.`,
       )
       return
     }
@@ -88,6 +90,7 @@ export default function InstructorSchedule() {
     try {
       await add.mutateAsync({
         instructor_id: instructorId,
+        available_date: date,
         day_of_week: day,
         start_time: slotStart,
         end_time: slotEnd,
@@ -101,7 +104,7 @@ export default function InstructorSchedule() {
     <div>
       <PageHeader
         title="My Availability"
-        subtitle="Set the weekly hours students can book you for."
+        subtitle="Choose calendar dates and set the hours students can book you for."
       />
 
       <div className="grid gap-6 lg:grid-cols-3">
@@ -111,19 +114,15 @@ export default function InstructorSchedule() {
             <div className="space-y-4">
               <label className="block">
                 <span className="mb-1 block text-sm font-medium text-slate-700">
-                  Day
+                  Available date
                 </span>
-                <select
-                  value={day}
-                  onChange={(e) => setDay(Number(e.target.value))}
+                <input
+                  type="date"
+                  min={today}
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
                   className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
-                >
-                  {DAYS.map((d) => (
-                    <option key={d} value={d}>
-                      {DAY_NAMES[d]}
-                    </option>
-                  ))}
-                </select>
+                />
               </label>
               <div className="grid grid-cols-2 gap-3">
                 <label className="block">
@@ -157,7 +156,7 @@ export default function InstructorSchedule() {
                 </div>
                 <div className="mt-0.5 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
                   <span className="text-sm font-semibold text-slate-800">
-                    {DAY_NAMES[day]}
+                    {date || 'Choose a date'}
                   </span>
                   <span className="text-sm font-bold tabular-nums text-brand-700">
                     {formatTime(start)} – {formatTime(end)}
@@ -186,9 +185,9 @@ export default function InstructorSchedule() {
           </SectionCard>
         </div>
 
-        {/* Weekly grid */}
+        {/* Calendar schedule */}
         <div className="lg:col-span-2">
-          <SectionCard title="Weekly schedule">
+          <SectionCard title="Calendar schedule">
             {isLoading ? (
               <Loader />
             ) : (availability ?? []).length === 0 ? (
@@ -198,9 +197,47 @@ export default function InstructorSchedule() {
                 hint="Add time slots so students can book consultations with you."
               />
             ) : (
-              <div className="space-y-1">
+              <div className="space-y-4">
+                {(availability ?? []).some((s) => s.available_date) && (
+                  <div className="space-y-1">
+                    {(availability ?? [])
+                      .filter((s) => s.available_date)
+                      .sort((a, b) =>
+                        `${a.available_date}${a.start_time}`.localeCompare(
+                          `${b.available_date}${b.start_time}`,
+                        ),
+                      )
+                      .map((s) => (
+                        <div
+                          key={s.id}
+                          className="flex items-center justify-between gap-3 rounded-lg bg-brand-50 px-3 py-2"
+                        >
+                          <div>
+                            <div className="text-sm font-semibold text-slate-800">
+                              {s.available_date}
+                            </div>
+                            <div className="text-xs text-brand-700">
+                              {formatTime(s.start_time)}–{formatTime(s.end_time)}
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => remove.mutate(s.id)}
+                            disabled={remove.isPending}
+                            aria-label="Remove slot"
+                            className="flex h-7 w-7 items-center justify-center rounded-full text-brand-500 transition hover:bg-brand-200 hover:text-brand-800 disabled:opacity-50"
+                          >
+                            <XIcon className="h-3 w-3" />
+                          </button>
+                        </div>
+                      ))}
+                  </div>
+                )}
+                {(availability ?? []).some((s) => !s.available_date) && (
+                <div className="space-y-1">
                 {DAYS.map((d) => {
-                  const slots = byDay.get(d) ?? []
+                  const slots = (byDay.get(d) ?? []).filter(
+                    (slot) => !slot.available_date,
+                  )
                   const open = slots.length > 0
                   return (
                     <div
@@ -253,6 +290,8 @@ export default function InstructorSchedule() {
                     </div>
                   )
                 })}
+                </div>
+                )}
               </div>
             )}
           </SectionCard>
