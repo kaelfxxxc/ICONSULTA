@@ -264,7 +264,7 @@ export default function BookSession() {
                         className={cn(
                           'inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition',
                           time === t
-                            ? 'bg-navy-900 text-white'
+                            ? 'bg-navy-900 text-white hover:bg-navy-800'
                             : 'bg-slate-100 text-slate-700 hover:bg-slate-200',
                           booked &&
                             'cursor-not-allowed bg-slate-200 text-slate-500 hover:bg-slate-200',

@@ -284,7 +284,7 @@ function FilterPill({
       className={cn(
         'rounded-full px-3.5 py-1.5 text-xs font-semibold transition',
         active
-          ? 'bg-navy-900 text-white'
+          ? 'bg-navy-900 text-white hover:bg-navy-800'
           : 'bg-slate-100 text-slate-600 hover:bg-slate-200',
       )}
     >

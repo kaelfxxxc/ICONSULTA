@@ -64,7 +64,7 @@ function ConsultationCard({
       className={cn(
         'flex w-full items-start gap-3 rounded-xl border p-3 text-left transition',
         selected
-          ? 'bg-card border-slate-700'
+          ? 'bg-card border-slate-700 hover:brightness-110'
           : 'border-slate-200 bg-white hover:border-[#cbd6e8] hover:bg-slate-50',
       )}
     >

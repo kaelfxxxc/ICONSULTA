@@ -160,7 +160,7 @@ function SettingsForm({ data, role }: { data: FullProfile; role: Role }) {
               className={cn(
                 'shrink-0 rounded-lg px-3.5 py-2 text-sm font-extrabold transition',
                 tab === t.key
-                  ? 'bg-navy-900 text-white'
+                  ? 'bg-navy-900 text-white hover:bg-navy-800'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50',
               )}
             >

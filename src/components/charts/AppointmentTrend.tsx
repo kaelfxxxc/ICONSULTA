@@ -61,7 +61,7 @@ export function AppointmentTrend({ metrics }: { metrics: AnalyticsMetric[] }) {
               className={cn(
                 'rounded-md px-2.5 py-1 text-xs font-semibold transition',
                 range === r.key
-                  ? 'bg-navy-900 text-white'
+                  ? 'bg-navy-900 text-white hover:bg-navy-800'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200',
               )}
             >

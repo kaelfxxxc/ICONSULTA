@@ -82,7 +82,7 @@ function DateFilterCard({
       className={cn(
         'flex h-14 w-14 shrink-0 flex-col items-center mt-3 ml-1 justify-center rounded-xl transition',
         active
-          ? 'button-card text-white shadow-sm'
+          ? 'button-card text-white shadow-sm hover:brightness-110'
           : 'bg-white text-navy-700 ring-1 ring-navy-100 hover:bg-navy-50',
       )}
     >

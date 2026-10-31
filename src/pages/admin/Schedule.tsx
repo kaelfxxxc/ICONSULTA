@@ -103,7 +103,7 @@ export default function AdminSchedule() {
                   className={cn(
                     'flex w-full items-center gap-3 rounded-xl p-2.5 text-left transition',
                     selected === i.id
-                      ? 'bg-card text-white'
+                      ? 'bg-card text-white hover:brightness-110'
                       : 'border-[1.5px] border-transparent shadow-[0_8px_24px_rgba(13,27,75,0.2)] hover:bg-slate-100',
                   )}
                 >

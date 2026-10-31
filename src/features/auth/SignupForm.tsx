@@ -54,7 +54,7 @@ export function SignupForm() {
             className={cn(
               'rounded-md py-1.5 text-sm font-medium capitalize transition',
               role === r
-                ? 'bg-white text-brand-700 shadow-sm'
+                ? 'bg-white text-brand-700 shadow-sm hover:bg-slate-50'
                 : 'text-slate-500 hover:text-slate-700',
             )}
           >
