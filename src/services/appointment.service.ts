@@ -42,6 +42,61 @@ export async function listInstructorAppointments(
   return (data ?? []).map(normalize)
 }
 
+/** Busy hour keys are returned without student data, so booking can disable
+ * another student's slot while appointment rows remain party-private. */
+export async function listInstructorBusySlots(
+  instructorProfileId: string,
+  date: string,
+): Promise<string[]> {
+  const { data, error } = await supabase.rpc('instructor_busy_slots', {
+    target_instructor_id: instructorProfileId,
+    target_date: date,
+  })
+  if (error) throw error
+  return (data ?? []).map((row: { slot_time: string }) => row.slot_time)
+}
+
+export async function findAppointmentByCallCode(code: string): Promise<string | null> {
+  const normalized = code.toUpperCase().replace(/[^A-Z0-9]/g, '')
+  const { data, error } = await supabase.rpc('appointment_id_for_call_code', { code: normalized })
+  if (error) throw error
+  return extractAppointmentId(data)
+}
+
+function extractAppointmentId(value: unknown): string | null {
+  if (typeof value === 'string') return /^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(value) ? value : null
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const found = extractAppointmentId(item)
+      if (found) return found
+    }
+  } else if (value && typeof value === 'object') {
+    const row = value as Record<string, unknown>
+    for (const key of ['appointment_id', 'id', 'appointment_id_for_call_code']) {
+      const found = extractAppointmentId(row[key])
+      if (found) return found
+    }
+    for (const nested of Object.values(row)) {
+      const found = extractAppointmentId(nested)
+      if (found) return found
+    }
+  }
+  return null
+}
+
+export interface JoinedCall {
+  appointment_id: string
+  call_code: string
+  reason: string | null
+  scheduled_at: string
+}
+
+export async function listMyJoinedCalls(): Promise<JoinedCall[]> {
+  const { data, error } = await supabase.rpc('my_joined_call_rooms')
+  if (error) throw error
+  return (data ?? []) as JoinedCall[]
+}
+
 export async function getAppointment(
   id: string,
 ): Promise<AppointmentWithParties | null> {
@@ -74,11 +129,14 @@ export async function createAppointment(
 }
 
 export async function approveAppointment(id: string): Promise<void> {
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('appointments')
     .update({ status: 'approved', video_room_id: `room-${id.slice(0, 8)}` })
     .eq('id', id)
+    .select('id')
+    .maybeSingle()
   if (error) throw error
+  if (!data) throw new Error('No appointment was updated. Check your instructor access and the Supabase appointment update policy.')
 }
 
 export async function rejectAppointment(
@@ -101,9 +159,13 @@ export async function cancelAppointment(id: string): Promise<void> {
 }
 
 export async function completeAppointment(id: string): Promise<void> {
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('appointments')
     .update({ status: 'completed' })
     .eq('id', id)
+    .eq('status', 'approved')
+    .select('id')
+    .maybeSingle()
   if (error) throw error
+  if (!data) throw new Error('This call has already ended.')
 }

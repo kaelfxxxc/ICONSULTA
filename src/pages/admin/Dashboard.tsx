@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { useRealtimeAnalytics } from '../../hooks/useRealtimeAnalytics'
 import type { LiveStatus } from '../../hooks/useRealtimeAnalytics'
 import { KpiCard, SystemStatusList } from '../../components/dashboard'
-import { Loader, PageHeader, SectionCard } from '../../components/common'
+import { CallCodeJoin, Loader, PageHeader, SectionCard } from '../../components/common'
 import {
   AppointmentTrend,
   DepartmentVolume,
@@ -62,6 +62,8 @@ export default function AdminDashboard() {
             </Link>
           </div>
         </PageHeader>
+
+        <CallCodeJoin />
 
         <div className="pt-3 grid gap-4 grid-cols-2 border-t border-slate-600 lg:grid-cols-4">
           <KpiCard

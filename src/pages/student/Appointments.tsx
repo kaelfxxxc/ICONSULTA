@@ -11,6 +11,7 @@ import {
   Loader,
   PageHeader,
   SectionCard,
+  CallCodeJoin,
 } from '../../components/common'
 import {
   CalendarIcon,
@@ -61,7 +62,9 @@ export default function StudentAppointments() {
         </Link>
       </PageHeader>
 
-      <div className="mb-5 flex w-full gap-2 overflow-x-auto p-2 border border-[#e5ebf3] rounded-lg bg-white sm:w-max sm:flex-wrap sm:overflow-visible">
+      <div className="mb-5"><CallCodeJoin /></div>
+
+      <div className="mb-5 flex flex-wrap gap-2">
         {TABS.map((t) => {
           const count = (appts ?? []).filter((a) => t.match(a.status)).length
           return (

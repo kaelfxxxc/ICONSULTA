@@ -8,6 +8,9 @@ import {
   createAppointment,
   getAppointment,
   listInstructorAppointments,
+  listInstructorBusySlots,
+  findAppointmentByCallCode,
+  listMyJoinedCalls,
   listStudentAppointments,
   rejectAppointment,
 } from '../services/appointment.service'
@@ -28,6 +31,22 @@ export function useInstructorAppointments(instructorProfileId?: string) {
   )
 }
 
+export function useInstructorBusySlots(instructorProfileId?: string, date?: string) {
+  return useSupabaseQuery(
+    ['instructor-busy-slots', instructorProfileId, date],
+    () => listInstructorBusySlots(instructorProfileId!, date!),
+    { enabled: !!instructorProfileId && !!date },
+  )
+}
+
+export function useFindAppointmentByCallCode() {
+  return useMutation({ mutationFn: findAppointmentByCallCode })
+}
+
+export function useMyJoinedCalls() {
+  return useSupabaseQuery(['joined-call-rooms'], listMyJoinedCalls)
+}
+
 export function useAppointment(id?: string) {
   return useSupabaseQuery(qk.appointment(id), () => getAppointment(id!), {
     enabled: !!id,
@@ -42,6 +61,7 @@ export function useCreateAppointment() {
       void qc.invalidateQueries({
         queryKey: qk.appointmentsStudent(vars.student_id),
       })
+      void qc.invalidateQueries({ queryKey: ['instructor-busy-slots', vars.instructor_id] })
     },
   })
 }
@@ -56,18 +76,23 @@ export function useAppointmentActions(instructorProfileId?: string) {
     void qc.invalidateQueries({ queryKey: ['appointments'] })
   }
 
+  const invalidateAfterDecision = () => {
+    invalidate()
+    void qc.invalidateQueries({ queryKey: ['instructor-busy-slots'] })
+  }
+
   const approve = useMutation({
     mutationFn: approveAppointment,
-    onSuccess: invalidate,
+    onSettled: invalidateAfterDecision,
   })
   const reject = useMutation({
     mutationFn: (v: { id: string; reason?: string }) =>
       rejectAppointment(v.id, v.reason),
-    onSuccess: invalidate,
+    onSettled: invalidateAfterDecision,
   })
   const complete = useMutation({
     mutationFn: completeAppointment,
-    onSuccess: invalidate,
+    onSettled: invalidateAfterDecision,
   })
   return { approve, reject, complete }
 }

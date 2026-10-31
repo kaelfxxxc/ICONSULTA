@@ -26,6 +26,22 @@ export async function getVideoSession(
   return (data as VideoSession | null) ?? null
 }
 
+export async function startAppointmentCall(appointmentId: string): Promise<string> {
+  const { data, error } = await supabase.rpc('start_appointment_call', {
+    target_appointment_id: appointmentId,
+  })
+  if (error) throw error
+  if (typeof data !== 'string') throw new Error('The shared call start time was not returned.')
+  return data
+}
+
+export async function generateAppointmentSummary(appointmentId: string): Promise<void> {
+  const { error } = await supabase.functions.invoke('generate-summary', {
+    body: { appointment_id: appointmentId },
+  })
+  if (error) throw error
+}
+
 export async function updateResolution(
   appointmentId: string,
   status: ResolutionStatus,
@@ -37,20 +53,18 @@ export async function updateResolution(
   if (error) throw error
 }
 
-/**
- * End a live session. Marking the appointment `completed` fires the 0006 trigger,
- * which bootstraps the video_sessions + appointment_summaries rows. Then we make
- * a best-effort call to the optional `generate-summary` Edge Function for real AI
- * text; if it isn't deployed (or HF_API_KEY is unset) the trigger placeholder
- * summary stands and the flow still completes.
- */
-export async function endSession(appointmentId: string): Promise<void> {
+/** Complete the appointment, save its live transcript, then generate the final summary. */
+export async function endSession(appointmentId: string, transcript = ''): Promise<void> {
   await completeAppointment(appointmentId)
-  try {
-    await supabase.functions.invoke('generate-summary', {
-      body: { appointment_id: appointmentId },
-    })
-  } catch {
-    // Intentionally ignored — graceful degradation without the function.
+
+  const cleanedTranscript = transcript.trim()
+  if (cleanedTranscript) {
+    const { error } = await supabase
+      .from('appointment_summaries')
+      .update({ transcript: cleanedTranscript })
+      .eq('appointment_id', appointmentId)
+    if (error) throw error
   }
+
+  await generateAppointmentSummary(appointmentId)
 }
