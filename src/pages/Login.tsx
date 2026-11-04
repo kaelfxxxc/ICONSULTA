@@ -187,7 +187,7 @@ export default function Login({ variant = 'default' }: { variant?: 'default' | '
               )}
 
               {/* Role cards — the picker drives sign-up; sign-in reads role from the DB. */}
-              {!isAdminPortal && (
+              {!isAdminPortal && mode === 'signup' && (
                 <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-2">
                   {(
                     [
