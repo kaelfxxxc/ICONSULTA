@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useProfile } from '../../hooks/useProfile'
 import { useInstructor, useInstructors, useAvailability } from '../../hooks/useInstructors'
@@ -57,6 +57,10 @@ function labelMinutes(t: string): number {
   return Number(h) * 60 + Number(m)
 }
 
+function isPastSlot(date: string, time: string, now = new Date()): boolean {
+  return new Date(`${date}T${time}:00`) < now
+}
+
 /** Local `YYYY-MM-DD` for a booked instant — matches the date input's value. */
 function localDayKey(iso: string): string {
   const d = new Date(iso)
@@ -80,6 +84,12 @@ export default function BookSession() {
   const [time, setTime] = useState('')
   const [reason, setReason] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [now, setNow] = useState(() => new Date())
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(new Date()), 30_000)
+    return () => window.clearInterval(timer)
+  }, [])
 
   const { data: instructors } = useInstructors()
   const { data: instructor, isLoading: loadingInstructor } =
@@ -102,12 +112,13 @@ export default function BookSession() {
           : s.day_of_week === wd && s.is_available,
       )
       .flatMap((s) => hourlySlots(s.start_time, s.end_time))
+      .filter((slot) => !isPastSlot(date, slot, now))
       .filter((slot) => {
         const key = `${date}T${slot}:00`
         return !(busySlots ?? []).some((busy) => busy.startsWith(key))
       })
       .sort()
-  }, [date, availability, busySlots, hasDateSpecificAvailability])
+  }, [date, availability, busySlots, hasDateSpecificAvailability, now])
 
   const { data: myAppointments } = useStudentAppointments(studentId)
 
@@ -158,6 +169,11 @@ export default function BookSession() {
     }
     if (selectedSlotUnavailable) {
       setError('That instructor time is already booked. Please choose another slot.')
+      setTime('')
+      return
+    }
+    if (isPastSlot(date, time, now)) {
+      setError('That time has already passed. Please choose another slot.')
       setTime('')
       return
     }

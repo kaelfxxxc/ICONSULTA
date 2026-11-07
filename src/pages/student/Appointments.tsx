@@ -64,7 +64,7 @@ export default function StudentAppointments() {
 
       <div className="mb-5"><CallCodeJoin /></div>
 
-      <div className="mb-5 flex flex-wrap gap-2">
+      <div className="flex w-full gap-2 overflow-x-auto rounded-lg border border-[#e5ebf3] bg-white p-2 mb-5 sm:w-max sm:flex-wrap sm:overflow-visible">
         {TABS.map((t) => {
           const count = (appts ?? []).filter((a) => t.match(a.status)).length
           return (
