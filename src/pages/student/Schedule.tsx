@@ -29,12 +29,19 @@ function localDay(iso: string) {
   ].join('-')
 }
 
-/** Local wall-clock time, e.g. "9:00 AM". */
-function localTime(iso: string) {
-  return new Date(iso).toLocaleTimeString(undefined, {
+/** Local one-hour consultation range, e.g. "9:00 AM–10:00 AM". */
+function localTimeRange(iso: string) {
+  const start = new Date(iso)
+  const end = new Date(start)
+  end.setHours(end.getHours() + 1)
+  const options: Intl.DateTimeFormatOptions = {
     hour: 'numeric',
     minute: '2-digit',
-  })
+  }
+  return `${start.toLocaleTimeString(undefined, options)}–${end.toLocaleTimeString(
+    undefined,
+    options,
+  )}`
 }
 
 function groupByDay(list: AppointmentWithParties[]) {
@@ -223,9 +230,9 @@ export default function StudentSchedule() {
                     key={a.id}
                     className="flex flex-col gap-3 px-5 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
                   >
-                    <div className="flex items-center gap-4 min-w-0">
-                      <div className="w-16 text-sm font-semibold text-slate-700">
-                        {localTime(a.scheduled_at)}
+                    <div className="flex min-w-0 flex-col items-start gap-1 sm:flex-row sm:items-center sm:gap-4">
+                      <div className="w-auto whitespace-nowrap text-sm font-semibold text-slate-700 sm:w-32">
+                        {localTimeRange(a.scheduled_at)}
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="truncate text-sm font-medium text-slate-800">

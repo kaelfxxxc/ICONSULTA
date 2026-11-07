@@ -38,6 +38,11 @@ function hourlySlots(start: string, end: string): string[] {
   return out
 }
 
+function addOneHour(time: string): string {
+  const [hours, minutes] = time.split(':').map(Number)
+  return `${String(hours + 1).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
+}
+
 const todayStr = new Date().toISOString().slice(0, 10)
 
 /** Local minutes-since-midnight for a booked instant. */
@@ -302,7 +307,8 @@ export default function BookSession() {
                         )}
                       >
                         <ClockIcon className="h-4 w-4" />
-                        {formatTime(`${t}:00`)}
+                        {formatTime(`${t}:00`)}–
+                        {formatTime(`${addOneHour(t)}:00`)}
                         {booked && (
                           <span className="text-[11px] font-normal">
                             Already booked

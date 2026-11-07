@@ -10,20 +10,18 @@ import {
   SectionCard,
 } from '../../components/common'
 import { ClockIcon, XIcon } from '../../components/common/icons'
-import {
-  DAY_NAMES,
-  DEPARTMENT_ACCENT,
-  NO_DEPARTMENT_ACCENT,
-} from '../../utils/constants'
 import { formatTime } from '../../lib/utils'
-import type { InstructorAvailability } from '../../types'
 
-const DAYS = [1, 2, 3, 4, 5, 6, 7]
 const today = new Date().toISOString().slice(0, 10)
 
 function isoWeekday(dateStr: string): number {
   const day = new Date(`${dateStr}T00:00:00`).getDay()
   return day === 0 ? 7 : day
+}
+
+function addOneHour(time: string): string {
+  const [hours, minutes] = time.split(':').map(Number)
+  return `${String(hours + 1).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
 }
 
 export default function InstructorSchedule() {
@@ -35,20 +33,7 @@ export default function InstructorSchedule() {
 
   const [date, setDate] = useState(today)
   const [start, setStart] = useState('09:00')
-  const [end, setEnd] = useState('10:00')
   const [error, setError] = useState<string | null>(null)
-
-  const byDay = useMemo(() => {
-    const map = new Map<number, InstructorAvailability[]>()
-    for (const s of availability ?? []) {
-      const arr = map.get(s.day_of_week) ?? []
-      arr.push(s)
-      map.set(s.day_of_week, arr)
-    }
-    for (const arr of map.values())
-      arr.sort((a, b) => a.start_time.localeCompare(b.start_time))
-    return map
-  }, [availability])
 
   // Header metrics, matching the admin schedule card: only available rows count.
   const openSlots = useMemo(
@@ -58,21 +43,16 @@ export default function InstructorSchedule() {
   const activeDays = new Set(openSlots.map((s) => s.day_of_week)).size
   const totalSlots = openSlots.length
 
-  /** School colour for this instructor's availability bars. */
-  const accent = instructor?.department
-    ? DEPARTMENT_ACCENT[instructor.department]
-    : NO_DEPARTMENT_ACCENT
-
   async function handleAdd() {
     setError(null)
     if (!instructorId) return
-    if (end <= start) {
-      setError('End time must be after the start time.')
+    if (!/^(?:[01]\d|2[0-2]):00$/.test(start)) {
+      setError('Choose a whole-hour start time between 12:00 AM and 10:00 PM.')
       return
     }
 
     const slotStart = `${start}:00`
-    const slotEnd = `${end}:00`
+    const slotEnd = `${addOneHour(start)}:00`
     const day = isoWeekday(date)
     const duplicate = (availability ?? []).some(
       (s) =>
@@ -104,7 +84,7 @@ export default function InstructorSchedule() {
     <div>
       <PageHeader
         title="My Availability"
-        subtitle="Choose calendar dates and set the hours students can book you for."
+        subtitle="Choose calendar dates and add one-hour slots students can book you for."
       />
 
       <div className="grid gap-6 lg:grid-cols-3">
@@ -124,26 +104,18 @@ export default function InstructorSchedule() {
                   className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
                 />
               </label>
-              <div className="grid grid-cols-2 gap-3">
+              <div>
                 <label className="block">
                   <span className="mb-1 block text-sm font-medium text-slate-700">
                     Start
                   </span>
                   <input
                     type="time"
+                    min="00:00"
+                    max="22:00"
+                    step="3600"
                     value={start}
                     onChange={(e) => setStart(e.target.value)}
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
-                  />
-                </label>
-                <label className="block">
-                  <span className="mb-1 block text-sm font-medium text-slate-700">
-                    End
-                  </span>
-                  <input
-                    type="time"
-                    value={end}
-                    onChange={(e) => setEnd(e.target.value)}
                     className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
                   />
                 </label>
@@ -152,14 +124,15 @@ export default function InstructorSchedule() {
                   and the times read plainly before committing to them. */}
               <div className="rounded-lg bg-slate-50 px-3 py-2.5">
                 <div className="text-[10px] font-semibold tracking-wide text-slate-500 uppercase">
-                  You are setting
+                  One-hour slot
                 </div>
                 <div className="mt-0.5 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
                   <span className="text-sm font-semibold text-slate-800">
                     {date || 'Choose a date'}
                   </span>
                   <span className="text-sm font-bold tabular-nums text-brand-700">
-                    {formatTime(start)} – {formatTime(end)}
+                    {formatTime(`${start}:00`)} –{' '}
+                    {formatTime(`${addOneHour(start)}:00`)}
                   </span>
                 </div>
               </div>
@@ -190,7 +163,7 @@ export default function InstructorSchedule() {
           <SectionCard title="Calendar schedule">
             {isLoading ? (
               <Loader />
-            ) : (availability ?? []).length === 0 ? (
+            ) : !(availability ?? []).some((s) => s.available_date) ? (
               <EmptyState
                 icon={ClockIcon}
                 title="No availability set"
@@ -198,100 +171,38 @@ export default function InstructorSchedule() {
               />
             ) : (
               <div className="space-y-4">
-                {(availability ?? []).some((s) => s.available_date) && (
-                  <div className="space-y-1">
-                    {(availability ?? [])
-                      .filter((s) => s.available_date)
-                      .sort((a, b) =>
-                        `${a.available_date}${a.start_time}`.localeCompare(
-                          `${b.available_date}${b.start_time}`,
-                        ),
-                      )
-                      .map((s) => (
-                        <div
-                          key={s.id}
-                          className="flex items-center justify-between gap-3 rounded-lg bg-brand-50 px-3 py-2"
-                        >
-                          <div>
-                            <div className="text-sm font-semibold text-slate-800">
-                              {s.available_date}
-                            </div>
-                            <div className="text-xs text-brand-700">
-                              {formatTime(s.start_time)}–{formatTime(s.end_time)}
-                            </div>
-                          </div>
-                          <button
-                            onClick={() => remove.mutate(s.id)}
-                            disabled={remove.isPending}
-                            aria-label="Remove slot"
-                            className="flex h-7 w-7 items-center justify-center rounded-full text-brand-500 transition hover:bg-brand-200 hover:text-brand-800 disabled:opacity-50"
-                          >
-                            <XIcon className="h-3 w-3" />
-                          </button>
-                        </div>
-                      ))}
-                  </div>
-                )}
-                {(availability ?? []).some((s) => !s.available_date) && (
                 <div className="space-y-1">
-                {DAYS.map((d) => {
-                  const slots = (byDay.get(d) ?? []).filter(
-                    (slot) => !slot.available_date,
-                  )
-                  const open = slots.length > 0
-                  return (
-                    <div
-                      key={d}
-                      className="flex items-center gap-3 border-b border-slate-100 py-2.5 last:border-0"
-                    >
-                      {/* Availability at a glance — the school's colour on days
-                          with slots, neutral on days without. */}
-                      <span
-                        className="h-7 w-1 shrink-0 rounded-full"
-                        style={{
-                          background: open ? accent : '#e2e8f0', // slate-200
-                        }}
-                      />
-                      <span className="w-24 shrink-0 text-sm font-semibold text-slate-700">
-                        {DAY_NAMES[d]}
-                      </span>
-                      <div className="flex min-w-0 flex-1 flex-wrap gap-1.5">
-                        {open ? (
-                          slots.map((s) => (
-                            <span
-                              key={s.id}
-                              className="inline-flex items-center gap-1.5 rounded-md bg-brand-50 py-0.5 pr-1 pl-2 text-xs font-medium text-brand-700"
-                            >
-                              {formatTime(s.start_time)}–
-                              {formatTime(s.end_time)}
-                              {/* Stays here, unlike the admin card's read-only
-                                  pills — this one is the editor. */}
-                              <button
-                                onClick={() => remove.mutate(s.id)}
-                                disabled={remove.isPending}
-                                aria-label="Remove slot"
-                                className="flex h-4 w-4 items-center justify-center rounded-full text-brand-500 transition hover:bg-brand-200 hover:text-brand-800 disabled:opacity-50"
-                              >
-                                <XIcon className="h-3 w-3" />
-                              </button>
-                            </span>
-                          ))
-                        ) : (
-                          <span className="text-xs text-slate-400">
-                            Unavailable
-                          </span>
-                        )}
+                  {(availability ?? [])
+                    .filter((s) => s.available_date)
+                    .sort((a, b) =>
+                      `${a.available_date}${a.start_time}`.localeCompare(
+                        `${b.available_date}${b.start_time}`,
+                      ),
+                    )
+                    .map((s) => (
+                      <div
+                        key={s.id}
+                        className="flex items-center justify-between gap-3 rounded-lg bg-brand-50 px-3 py-2"
+                      >
+                        <div>
+                          <div className="text-sm font-semibold text-slate-800">
+                            {s.available_date}
+                          </div>
+                          <div className="text-xs text-brand-700">
+                            {formatTime(s.start_time)}–{formatTime(s.end_time)}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => remove.mutate(s.id)}
+                          disabled={remove.isPending}
+                          aria-label="Remove slot"
+                          className="flex h-7 w-7 items-center justify-center rounded-full text-brand-500 transition hover:bg-brand-200 hover:text-brand-800 disabled:opacity-50"
+                        >
+                          <XIcon className="h-3 w-3" />
+                        </button>
                       </div>
-                      {open && (
-                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-800 text-[11px] font-bold tabular-nums text-white">
-                          {slots.length}
-                        </span>
-                      )}
-                    </div>
-                  )
-                })}
+                    ))}
                 </div>
-                )}
               </div>
             )}
           </SectionCard>
