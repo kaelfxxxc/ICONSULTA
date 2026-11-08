@@ -42,6 +42,21 @@ export default function InstructorSchedule() {
   )
   const activeDays = new Set(openSlots.map((s) => s.day_of_week)).size
   const totalSlots = openSlots.length
+  const dateGroups = useMemo(() => {
+    const groups = new Map<string, NonNullable<typeof availability>>()
+    for (const slot of availability ?? []) {
+      if (!slot.available_date) continue
+      const slots = groups.get(slot.available_date) ?? []
+      slots.push(slot)
+      groups.set(slot.available_date, slots)
+    }
+    return [...groups.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, slots]) => [
+        date,
+        [...slots].sort((a, b) => a.start_time.localeCompare(b.start_time)),
+      ] as const)
+  }, [availability])
 
   async function handleAdd() {
     setError(null)
@@ -170,16 +185,22 @@ export default function InstructorSchedule() {
                 hint="Add time slots so students can book consultations with you."
               />
             ) : (
-              <div className="space-y-4">
-                <div className="space-y-1">
-                  {(availability ?? [])
-                    .filter((s) => s.available_date)
-                    .sort((a, b) =>
-                      `${a.available_date}${a.start_time}`.localeCompare(
-                        `${b.available_date}${b.start_time}`,
-                      ),
-                    )
-                    .map((s) => (
+              <div className="space-y-5">
+                {dateGroups.map(([date, slots]) => (
+                  <div key={date}>
+                    <div className="mb-2 flex items-baseline justify-between gap-3">
+                      <h3 className="text-sm font-semibold text-slate-800">
+                        {new Date(`${date}T00:00:00`).toLocaleDateString(
+                          undefined,
+                          { weekday: 'long', month: 'short', day: 'numeric' },
+                        )}
+                      </h3>
+                      <span className="text-xs text-slate-500">
+                        {slots.length} {slots.length === 1 ? 'slot' : 'slots'}
+                      </span>
+                    </div>
+                    <div className="space-y-1">
+                      {slots.map((s) => (
                       <div
                         key={s.id}
                         className="flex items-center justify-between gap-3 rounded-lg bg-brand-50 px-3 py-2"
@@ -201,8 +222,10 @@ export default function InstructorSchedule() {
                           <XIcon className="h-3 w-3" />
                         </button>
                       </div>
-                    ))}
-                </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </SectionCard>

@@ -61,6 +61,15 @@ function isPastSlot(date: string, time: string, now = new Date()): boolean {
   return new Date(`${date}T${time}:00`) < now
 }
 
+function busySlotMatches(busy: string, date: string, time: string): boolean {
+  const booked = new Date(busy)
+  return (
+    !Number.isNaN(booked.getTime()) &&
+    localDayKey(busy) === date &&
+    slotMinutes(busy) === labelMinutes(time)
+  )
+}
+
 /** Local `YYYY-MM-DD` for a booked instant — matches the date input's value. */
 function localDayKey(iso: string): string {
   const d = new Date(iso)
@@ -113,10 +122,6 @@ export default function BookSession() {
       )
       .flatMap((s) => hourlySlots(s.start_time, s.end_time))
       .filter((slot) => !isPastSlot(date, slot, now))
-      .filter((slot) => {
-        const key = `${date}T${slot}:00`
-        return !(busySlots ?? []).some((busy) => busy.startsWith(key))
-      })
       .sort()
   }, [date, availability, busySlots, hasDateSpecificAvailability, now])
 
@@ -147,8 +152,13 @@ export default function BookSession() {
     return myTakenMinutes.some((m) => m >= start && m < start + 60)
   }
   const timeTaken = !!time && isSlotTaken(time)
+  const instructorSlotTaken = (t: string) =>
+    (busySlots ?? []).some((busy) => busySlotMatches(busy, date, t))
+  const selectedSlotBooked = !!time && instructorSlotTaken(time)
   const selectedSlotUnavailable = !!time && !daySlots.includes(time)
-  const dayFull = daySlots.length > 0 && daySlots.every(isSlotTaken)
+  const dayFull =
+    daySlots.length > 0 &&
+    daySlots.every((slot) => isSlotTaken(slot) || instructorSlotTaken(slot))
   const allInstructorSlotsTaken = daySlots.length === 0 &&
     (availability ?? []).some((s) =>
       hasDateSpecificAvailability
@@ -168,6 +178,11 @@ export default function BookSession() {
       return
     }
     if (selectedSlotUnavailable) {
+      setError('That instructor time is already booked. Please choose another slot.')
+      setTime('')
+      return
+    }
+    if (selectedSlotBooked) {
       setError('That instructor time is already booked. Please choose another slot.')
       setTime('')
       return
@@ -303,15 +318,18 @@ export default function BookSession() {
                 <div className="flex flex-wrap gap-2">
                   {daySlots.map((t) => {
                     const booked = isSlotTaken(t)
+                    const instructorBooked = instructorSlotTaken(t)
                     return (
                       <button
                         key={t}
                         onClick={() => setTime(t)}
-                        disabled={booked}
+                        disabled={booked || instructorBooked}
                         title={
                           booked
                             ? 'You already have an appointment at this time'
-                            : undefined
+                            : instructorBooked
+                              ? 'This instructor time is already booked'
+                              : undefined
                         }
                         className={cn(
                           'inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition',
@@ -320,14 +338,16 @@ export default function BookSession() {
                             : 'bg-slate-100 text-slate-700 hover:bg-slate-200',
                           booked &&
                             'cursor-not-allowed bg-slate-200 text-slate-500 hover:bg-slate-200',
+                          instructorBooked &&
+                            'cursor-not-allowed bg-amber-50 text-amber-700 hover:bg-amber-50',
                         )}
                       >
                         <ClockIcon className="h-4 w-4" />
                         {formatTime(`${t}:00`)}–
                         {formatTime(`${addOneHour(t)}:00`)}
-                        {booked && (
+                        {(booked || instructorBooked) && (
                           <span className="text-[11px] font-normal">
-                            Already booked
+                            — Already booked
                           </span>
                         )}
                       </button>

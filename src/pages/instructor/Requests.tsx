@@ -24,6 +24,7 @@ import { cn } from '../../lib/utils'
 import type { AppointmentStatus } from '../../types'
 
 type Tab = 'pending' | 'confirmed' | 'completed' | 'all'
+type DateFilter = 'today' | 'advance'
 
 const TABS: { key: Tab; label: string; match: (s: AppointmentStatus) => boolean }[] =
   [
@@ -33,6 +34,22 @@ const TABS: { key: Tab; label: string; match: (s: AppointmentStatus) => boolean 
     { key: 'all', label: 'All', match: () => true },
   ]
 
+const now = new Date()
+const today = [
+  now.getFullYear(),
+  String(now.getMonth() + 1).padStart(2, '0'),
+  String(now.getDate()).padStart(2, '0'),
+].join('-')
+
+function localDay(iso: string): string {
+  const date = new Date(iso)
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, '0'),
+    String(date.getDate()).padStart(2, '0'),
+  ].join('-')
+}
+
 export default function InstructorRequests() {
   const navigate = useNavigate()
   const { data: fp } = useProfile()
@@ -41,12 +58,18 @@ export default function InstructorRequests() {
   const { approve, reject, complete } = useAppointmentActions(instructorId)
 
   const [tab, setTab] = useState<Tab>('pending')
+  const [dateFilter, setDateFilter] = useState<DateFilter>('today')
   const [openSummary, setOpenSummary] = useState<string | null>(null)
 
   const filtered = useMemo(() => {
     const m = TABS.find((t) => t.key === tab)!.match
-    return (appts ?? []).filter((a) => m(a.status))
-  }, [appts, tab])
+    return (appts ?? []).filter((a) => {
+      if (!m(a.status)) return false
+      if (tab !== 'pending') return true
+      const day = localDay(a.scheduled_at)
+      return dateFilter === 'today' ? day === today : day > today
+    })
+  }, [appts, tab, dateFilter])
 
   const busy = approve.isPending || reject.isPending || complete.isPending
   const decisionError = approve.error ?? reject.error ?? complete.error
@@ -91,7 +114,35 @@ export default function InstructorRequests() {
         })}
       </div>
 
+
       <SectionCard bodyClassName="space-y-3 p-4">
+        {tab === 'pending' && (
+          <div>
+            <button
+              onClick={() => setDateFilter('today')}
+              className={cn(
+                'rounded-lg px-3.5 py-2 text-sm font-semibold transition',
+                dateFilter === 'today'
+                  ? 'bg-navy-900 text-white'
+                  : 'text-slate-600 hover:bg-slate-50',
+              )}
+            >
+              Today
+            </button>
+            <button
+              onClick={() => setDateFilter('advance')}
+              className={cn(
+                'rounded-lg px-3.5 py-2 text-sm font-semibold transition',
+                dateFilter === 'advance'
+                  ? 'bg-navy-900 text-white'
+                  : 'text-slate-600 hover:bg-slate-50',
+              )}
+            >
+              Advance bookings
+            </button>
+        </div>
+      )}
+
         {isLoading ? (
           <Loader />
         ) : filtered.length === 0 ? (
