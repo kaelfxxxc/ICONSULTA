@@ -12,6 +12,7 @@ import {
   PageHeader,
   SectionCard,
   CallCodeJoin,
+  ReasonDialog,
 } from '../../components/common'
 import {
   CalendarIcon,
@@ -42,6 +43,7 @@ export default function StudentAppointments() {
 
   const [tab, setTab] = useState<Tab>('upcoming')
   const [openSummary, setOpenSummary] = useState<string | null>(null)
+  const [cancelId, setCancelId] = useState<string | null>(null)
 
   const filtered = useMemo(() => {
     const m = TABS.find((t) => t.key === tab)!.match
@@ -128,7 +130,7 @@ export default function StudentAppointments() {
                     )}
                     {(a.status === 'pending' || a.status === 'approved') && (
                       <button
-                        onClick={() => cancel.mutate(a.id)}
+                        onClick={() => setCancelId(a.id)}
                         disabled={cancel.isPending}
                         className="rounded-lg px-3 py-2 text-xs font-semibold text-red-600 ring-1 ring-red-200 transition hover:bg-red-50 disabled:opacity-50"
                       >
@@ -149,6 +151,7 @@ export default function StudentAppointments() {
           ))
         )}
       </SectionCard>
+      {cancelId && <ReasonDialog title="Why are you cancelling this appointment?" onClose={() => setCancelId(null)} onSubmit={(reason) => { cancel.mutate({ id: cancelId, reason }); setCancelId(null) }} />}
     </div>
   )
 }

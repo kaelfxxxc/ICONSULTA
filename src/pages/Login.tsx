@@ -34,6 +34,7 @@ export default function Login({ variant = 'default' }: { variant?: 'default' | '
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [department, setDepartment] = useState<Department>('SOT')
+  const [credentialId, setCredentialId] = useState('')
   const [showPw, setShowPw] = useState(false)
   const [remember, setRemember] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -69,6 +70,7 @@ export default function Login({ variant = 'default' }: { variant?: 'default' | '
           name,
           role,
           department: role === 'instructor' ? department : undefined,
+          credentialId,
         })
         // Email confirmation is bypassed: route the new account to the Sign In
         // tab to log in with the credentials they just created. signUp uses a
@@ -276,6 +278,18 @@ export default function Login({ variant = 'default' }: { variant?: 'default' | '
                   autoComplete="email"
                   placeholder="idnumber@mcce.edu.ph"
                 />
+
+                {mode === 'signup' && (
+                  <Input
+                    label={role === 'student' ? 'Student ID number' : 'Instructor / Employee ID number'}
+                    value={credentialId}
+                    onChange={(e) => setCredentialId(e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, ''))}
+                    required
+                    maxLength={30}
+                    pattern="[A-Z0-9-]{4,30}"
+                    placeholder={role === 'student' ? '2026-12345' : 'EMP-12345'}
+                  />
+                )}
 
                 <Input
                   label="Password"

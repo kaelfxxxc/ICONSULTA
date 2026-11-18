@@ -14,4 +14,5 @@ export interface SignUpInput {
   name: string
   role: Exclude<Role, 'admin'> // admins are provisioned server-side, never self-signup
   department?: Department
+  credentialId: string
 }

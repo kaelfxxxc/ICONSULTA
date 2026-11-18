@@ -10,6 +10,7 @@ import {
   listAdminUsers,
   updateUserRole,
   updateUserStatus,
+  reviewUserRegistration,
 } from '../services/analytics.service'
 import type { Role, UserStatus } from '../types'
 
@@ -19,6 +20,11 @@ export function useAdminUsers(filters: AdminUserFilters = {}) {
     () => listAdminUsers(filters),
     { placeholderData: keepPreviousData },
   )
+}
+
+export function useReviewUserRegistration() {
+  const qc = useQueryClient()
+  return useMutation({ mutationFn: (v: { id: string; decision: 'approved' | 'rejected'; reason?: string }) => reviewUserRegistration(v.id, v.decision, v.reason), onSuccess: () => { void qc.invalidateQueries({ queryKey: ['adminUsers'] }) } })
 }
 
 export function useUpdateUserStatus() {

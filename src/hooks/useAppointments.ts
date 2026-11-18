@@ -100,7 +100,7 @@ export function useAppointmentActions(instructorProfileId?: string) {
 export function useCancelAppointment(studentProfileId?: string) {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: cancelAppointment,
+    mutationFn: (v: { id: string; reason: string }) => cancelAppointment(v.id, v.reason),
     onSuccess: () => {
       void qc.invalidateQueries({
         queryKey: qk.appointmentsStudent(studentProfileId),

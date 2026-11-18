@@ -258,7 +258,7 @@ export default function StudentSchedule() {
                       )}
                       {(a.status === 'pending' || a.status === 'approved') && (
                         <button
-                          onClick={() => cancel.mutate(a.id)}
+                          onClick={() => cancel.mutate({ id: a.id, reason: 'Schedule conflict' })}
                           disabled={cancel.isPending}
                           className="rounded-lg px-3 py-1.5 text-xs font-semibold text-red-600 ring-1 ring-red-200 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                         >

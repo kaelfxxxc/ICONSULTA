@@ -3,7 +3,7 @@
 
 export type Role = 'student' | 'instructor' | 'admin'
 export type Department = 'SOB' | 'SOT' | 'SOE'
-export type UserStatus = 'active' | 'inactive' | 'suspended'
+export type UserStatus = 'pending' | 'active' | 'inactive' | 'suspended'
 export type StudentStatus = 'active' | 'inactive' | 'graduated'
 export type AppointmentStatus =
   | 'pending'
@@ -83,6 +83,7 @@ export interface Appointment {
   video_room_id: string | null
   call_code: string | null
   rejection_reason: string | null
+  cancellation_reason: string | null
   instructor_notes: string | null
   created_at: string
   updated_at: string

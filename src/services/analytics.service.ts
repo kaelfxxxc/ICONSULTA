@@ -163,6 +163,17 @@ export async function updateUserRole(id: string, role: Role): Promise<void> {
   if (error) throw error
 }
 
+export async function reviewUserRegistration(id: string, decision: 'approved' | 'rejected', reason?: string): Promise<void> {
+  const { data: auth } = await supabase.auth.getUser()
+  const status = decision === 'approved' ? 'active' : 'inactive'
+  const { error } = await supabase.from('users').update({ status, approval_rejection_reason: decision === 'rejected' ? reason : null }).eq('id', id)
+  if (error) throw error
+  const { error: auditError } = await supabase.from('account_approval_audit').insert({ user_id: id, admin_user_id: auth.user?.id, decision, reason: reason ?? null })
+  if (auditError) throw auditError
+  const { error: noticeError } = await supabase.from('notifications').insert({ user_id: id, type: 'system', title: `Account ${decision}`, content: decision === 'approved' ? 'Your account has been approved. You can now use ICONSULTA.' : `Your account registration was rejected. Reason: ${reason ?? 'Not specified'}.` })
+  if (noticeError) throw noticeError
+}
+
 /** Live admin dashboard: subscribe to analytics_metrics changes (any event) and
  *  to new appointment requests. analytics_metrics is admin-only via RLS, so only
  *  admins receive these events. Returns an unsubscribe function. */

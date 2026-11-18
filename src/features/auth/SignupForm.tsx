@@ -14,6 +14,7 @@ export function SignupForm() {
   const [password, setPassword] = useState('')
   const [role, setRole] = useState<SignupRole>('student')
   const [department, setDepartment] = useState<Department>('SOB')
+  const [credentialId, setCredentialId] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -30,6 +31,7 @@ export function SignupForm() {
         name,
         role,
         department: role === 'instructor' ? department : undefined,
+        credentialId,
       })
       // signUp runs on a session-less client on purpose, so the browser is
       // never logged in here — routing to a dashboard would just bounce off
@@ -69,6 +71,15 @@ export function SignupForm() {
         onChange={(e) => setName(e.target.value)}
         required
         autoComplete="name"
+      />
+      <Input
+        label={role === 'student' ? 'Student ID number' : 'Instructor / Employee ID number'}
+        value={credentialId}
+        onChange={(e) => setCredentialId(e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, ''))}
+        required
+        maxLength={30}
+        pattern="[A-Z0-9-]{4,30}"
+        placeholder={role === 'student' ? 'e.g. 2026-12345' : 'e.g. EMP-12345'}
       />
       <Input
         label="Email"

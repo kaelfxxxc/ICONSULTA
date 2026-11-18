@@ -4,6 +4,7 @@ import {
   useAdminUsers,
   useUpdateUserRole,
   useUpdateUserStatus,
+  useReviewUserRegistration,
 } from '../../hooks/useAdminUsers'
 import { ADMIN_USERS_PAGE_SIZE } from '../../services/analytics.service'
 import {
@@ -32,6 +33,7 @@ const ROLE_FILTERS: { value: Role | 'all'; label: string }[] = [
 ]
 
 const STATUS_TONE: Record<UserStatus, 'green' | 'red' | 'gray'> = {
+  pending: 'gray',
   active: 'green',
   suspended: 'red',
   inactive: 'gray',
@@ -46,6 +48,7 @@ export default function AdminUsers() {
   const { data, isLoading, isFetching } = useAdminUsers({ role, search, page })
   const updateStatus = useUpdateUserStatus()
   const updateRole = useUpdateUserRole()
+  const review = useReviewUserRegistration()
 
   const rows = data?.rows ?? []
   const count = data?.count ?? 0
@@ -169,6 +172,7 @@ export default function AdminUsers() {
                       <Badge tone={STATUS_TONE[u.status]}>{u.status}</Badge>
                     </td>
                     <td className="px-5 py-3 text-right">
+                      {u.status === 'pending' ? <div className="flex justify-end gap-2"><button onClick={() => review.mutate({ id: u.id, decision: 'approved' })} className="rounded-lg px-3 py-1.5 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">Approve</button><button onClick={() => { const reason = window.prompt('Reason for rejection (required):')?.trim(); if (reason) review.mutate({ id: u.id, decision: 'rejected', reason }) }} className="rounded-lg px-3 py-1.5 text-xs font-semibold text-red-600 ring-1 ring-red-200">Reject</button></div> :
                       <button
                         onClick={() => toggleStatus(u.id, u.status)}
                         disabled={updateStatus.isPending}
@@ -180,7 +184,7 @@ export default function AdminUsers() {
                         )}
                       >
                         {u.status === 'active' ? 'Suspend' : 'Activate'}
-                      </button>
+                      </button>}
                     </td>
                   </tr>
                 ))}

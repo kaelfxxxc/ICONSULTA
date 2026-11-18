@@ -13,6 +13,7 @@ import {
   Loader,
   PageHeader,
   SectionCard,
+  ReasonDialog,
 } from '../../components/common'
 import {
   CalendarIcon,
@@ -60,6 +61,7 @@ export default function InstructorRequests() {
   const [tab, setTab] = useState<Tab>('pending')
   const [dateFilter, setDateFilter] = useState<DateFilter>('today')
   const [openSummary, setOpenSummary] = useState<string | null>(null)
+  const [declineId, setDeclineId] = useState<string | null>(null)
 
   const filtered = useMemo(() => {
     const m = TABS.find((t) => t.key === tab)!.match
@@ -167,7 +169,7 @@ export default function InstructorRequests() {
                     {a.status === 'pending' && (
                       <ApproveDecline
                         onApprove={() => approve.mutate(a.id)}
-                        onDecline={() => reject.mutate({ id: a.id })}
+                        onDecline={() => setDeclineId(a.id)}
                         disabled={busy}
                       />
                     )}
@@ -214,6 +216,7 @@ export default function InstructorRequests() {
           ))
         )}
       </SectionCard>
+      {declineId && <ReasonDialog title="Why are you declining this request?" onClose={() => setDeclineId(null)} onSubmit={(reason) => { reject.mutate({ id: declineId, reason }); setDeclineId(null) }} />}
     </div>
   )
 }

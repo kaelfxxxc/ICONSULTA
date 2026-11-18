@@ -82,13 +82,14 @@ export async function signUp({
   name,
   role,
   department,
+  credentialId,
 }: SignUpInput) {
   const { data, error } = await signupClient.auth.signUp({
     email,
     password,
     options: {
       // Read by the handle_new_user() DB trigger to create the profile rows.
-      data: { name, role, ...(department ? { department } : {}) },
+      data: { name, role, credential_id: credentialId, ...(department ? { department } : {}) },
     },
   })
   if (error) throw authError(error)

@@ -150,10 +150,10 @@ export async function rejectAppointment(
   if (error) throw error
 }
 
-export async function cancelAppointment(id: string): Promise<void> {
+export async function cancelAppointment(id: string, reason: string): Promise<void> {
   const { error } = await supabase
     .from('appointments')
-    .update({ status: 'cancelled' })
+    .update({ status: 'cancelled', cancellation_reason: reason })
     .eq('id', id)
   if (error) throw error
 }

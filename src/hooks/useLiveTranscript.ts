@@ -57,7 +57,6 @@ export function useLiveTranscript() {
     const begin = () => {
       if (!shouldListen.current) return
       const instance = new Constructor()
-      const baseTranscript = finalText.current
       recognition.current = instance
       instance.continuous = true
       instance.interimResults = true
@@ -72,7 +71,7 @@ export function useLiveTranscript() {
           if (result.isFinal) final += `${words} `
           else pending += `${words} `
         }
-        if (final) finalText.current = `${baseTranscript} ${final}`.trim()
+        if (final) finalText.current = `${finalText.current} ${final}`.trim()
         interimText.current = pending.trim()
         setTranscript(finalText.current)
         setInterim(interimText.current)

@@ -10,9 +10,9 @@ export function formatDateTime(iso: string | null | undefined): string {
   if (!iso) return '—'
   return new Date(iso).toLocaleString(undefined, {
     month: 'short',
-    day: 'numeric',
+    day: '2-digit',
     year: 'numeric',
-    hour: 'numeric',
+    hour: '2-digit',
     minute: '2-digit',
   })
 }
@@ -21,7 +21,7 @@ export function formatDate(iso: string | null | undefined): string {
   if (!iso) return '—'
   return new Date(iso).toLocaleDateString(undefined, {
     month: 'short',
-    day: 'numeric',
+    day: '2-digit',
     year: 'numeric',
   })
 }
