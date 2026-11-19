@@ -19,6 +19,12 @@ function isoWeekday(dateStr: string): number {
   return day === 0 ? 7 : day
 }
 
+function formatDate(dateStr: string | null | undefined): string {
+  if (!dateStr) return ''
+  const [year, month, day] = dateStr.split('-')
+  return `${month}/${day}/${year}`
+}
+
 function addOneHour(time: string): string {
   const [hours, minutes] = time.split(':').map(Number)
   return `${String(hours + 1).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
@@ -143,7 +149,7 @@ export default function InstructorSchedule() {
                 </div>
                 <div className="mt-0.5 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
                   <span className="text-sm font-semibold text-slate-800">
-                    {date || 'Choose a date'}
+                    {date ? formatDate(date) : 'Choose a date'}
                   </span>
                   <span className="text-sm font-bold tabular-nums text-brand-700">
                     {formatTime(`${start}:00`)} –{' '}
@@ -207,7 +213,7 @@ export default function InstructorSchedule() {
                       >
                         <div>
                           <div className="text-sm font-semibold text-slate-800">
-                            {s.available_date}
+                            {formatDate(s.available_date)}
                           </div>
                           <div className="text-xs text-brand-700">
                             {formatTime(s.start_time)}–{formatTime(s.end_time)}

@@ -30,6 +30,12 @@ function isoWeekday(dateStr: string): number {
   return js === 0 ? 7 : js
 }
 
+function formatDate(dateStr: string): string {
+  if (!dateStr) return '—'
+  const [year, month, day] = dateStr.split('-')
+  return `${month}-${day}-${year}`
+}
+
 function hourlySlots(start: string, end: string): string[] {
   const sh = Number(start.slice(0, 2))
   const eh = Number(end.slice(0, 2))
@@ -411,7 +417,7 @@ export default function BookSession() {
             ) : null}
 
             <dl className="mt-4 space-y-2 text-sm">
-              <SummaryRow label="Date" value={date || '—'} />
+              <SummaryRow label="Date" value={formatDate(date)} />
               <SummaryRow
                 label="Time"
                 value={time ? formatTime(`${time}:00`) : '—'}
