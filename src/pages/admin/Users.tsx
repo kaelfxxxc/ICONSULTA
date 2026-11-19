@@ -52,6 +52,7 @@ export default function AdminUsers() {
 
   const rows = data?.rows ?? []
   const count = data?.count ?? 0
+  const pendingCount = data?.pendingCount ?? 0
   const totalPages = Math.max(1, Math.ceil(count / ADMIN_USERS_PAGE_SIZE))
 
   function submitSearch(e: FormEvent) {
@@ -73,6 +74,12 @@ export default function AdminUsers() {
         title="User Management"
         subtitle="Manage accounts, roles, and access across the platform."
       />
+
+      <div className="my-5 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4">
+        <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">New users</p>
+        <p className="mt-1 text-3xl font-bold text-amber-950">{pendingCount}</p>
+        <p className="mt-1 text-sm text-amber-800">Registration{pendingCount === 1 ? '' : 's'} waiting for approval</p>
+      </div>
 
       {/* Controls */}
       <div className="mb-4 flex flex-wrap items-center gap-3">

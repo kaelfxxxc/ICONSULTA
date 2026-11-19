@@ -4,12 +4,15 @@ import type { InstructorFilters } from '../hooks/queryKeys'
 
 // instructor_profiles is readable by every authenticated user (faculty
 // directory), and so is the joined users row for role = 'instructor'.
-const SELECT = '*, user:users!inner(id,name,email,profile_picture_url)'
+const SELECT = '*, user:users!inner(id,name,email,profile_picture_url,role)'
 
 export async function listInstructors(
   filters: InstructorFilters = {},
 ): Promise<InstructorDirectoryEntry[]> {
   let q = supabase.from('instructor_profiles').select(SELECT)
+  // The directory must contain only accounts whose canonical user role is
+  // instructor, even if an old/misconfigured profile row exists.
+  q = q.eq('user.role', 'instructor')
   if (filters.department && filters.department !== 'all') {
     q = q.eq('department', filters.department)
   }
@@ -37,6 +40,7 @@ export async function getInstructor(
   const { data, error } = await supabase
     .from('instructor_profiles')
     .select(SELECT)
+    .eq('user.role', 'instructor')
     .eq('id', id)
     .maybeSingle()
   if (error) throw error

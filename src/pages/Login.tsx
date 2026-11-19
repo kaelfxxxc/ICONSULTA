@@ -5,7 +5,6 @@ import { signIn, signOut, signUp } from '../services/auth.service'
 import { ROLE_HOME, DEPARTMENTS } from '../utils/constants'
 import { cn } from '../lib/utils'
 import {
-  ArrowRightIcon,
   BookOpenIcon,
   CheckIcon,
   ChevronDownIcon,
@@ -19,6 +18,7 @@ import {
   MailIcon,
   ShieldCheckIcon,
   SparklesIcon,
+  ArrowRightIcon,
 } from '../components/common'
 import type { Department } from '../types'
 
@@ -93,7 +93,7 @@ export default function Login({ variant = 'default' }: { variant?: 'default' | '
       ? 'Welcome back.'
       : 'Create your account.'
   const subtext = isAdminPortal
-    ? 'Restricted access — administrator accounts only.'
+    ? ''
     : mode === 'signin'
       ? 'Sign in to keep your consultations moving.'
       : 'Start booking sessions with MCC faculty.'
@@ -154,14 +154,7 @@ export default function Login({ variant = 'default' }: { variant?: 'default' | '
               <h2 className="mt-2 text-3xl font-bold tracking-tight text-slate-900">
                 {heading}
               </h2>
-              <p className="mt-2 text-sm text-slate-500">{subtext}</p>
-
-              {isAdminPortal && (
-                <div className="mt-5 flex items-center gap-2 rounded-xl border border-navy-200 bg-navy-50 px-3 py-2.5 text-sm font-medium text-navy-900">
-                  <ShieldCheckIcon className="h-4 w-4" />
-                  Admin portal
-                </div>
-              )}
+              {subtext && <p className="mt-2 text-sm text-slate-500">{subtext}</p>}
 
               {/* Mode tabs — admins are provisioned server-side, never self-signup. */}
               {!isAdminPortal && (
@@ -380,17 +373,12 @@ export default function Login({ variant = 'default' }: { variant?: 'default' | '
                 <button
                   type="submit"
                   disabled={loading}
-                  className="mt-1 flex w-full items-center justify-between gap-3 rounded-xl bg-navy-900 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-navy-900/20 transition hover:bg-navy-800 active:scale-[.99] disabled:cursor-not-allowed disabled:bg-navy-300 disabled:shadow-none"
+                  className="mt-1 flex w-full items-center justify-center gap-3 rounded-xl bg-navy-900 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-navy-900/20 transition hover:bg-navy-800 active:scale-[.99] disabled:cursor-not-allowed disabled:bg-navy-300 disabled:shadow-none"
                 >
-                  <span className="flex items-center gap-2">
-                    {loading && (
-                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-                    )}
-                    {ctaLabel}
-                  </span>
-                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/15">
-                    <ArrowRightIcon className="h-4 w-4" />
-                  </span>
+                  {loading && (
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                  )}
+                  {ctaLabel}
                 </button>
               </form>
 
@@ -399,16 +387,8 @@ export default function Login({ variant = 'default' }: { variant?: 'default' | '
                 Use your MCC-issued email to access all campus features.
               </div>
 
-              <div className="mt-3 border-t border-slate-100 pt-4 text-center">
-                {isAdminPortal ? (
-                  <Link
-                    to="/login"
-                    className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-navy-900"
-                  >
-                    Student / instructor sign in
-                    <ArrowRightIcon className="h-3 w-3" />
-                  </Link>
-                ) : (
+              {!isAdminPortal && mode === 'signin' && (
+                <div className="mt-4 border-t border-slate-100 pt-4 text-center">
                   <Link
                     to="/login/admin"
                     className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-navy-900"
@@ -416,8 +396,10 @@ export default function Login({ variant = 'default' }: { variant?: 'default' | '
                     Administrator sign in
                     <ArrowRightIcon className="h-3 w-3" />
                   </Link>
-                )}
-              </div>
+                </div>
+              )}
+
+
             </div>
           </div>
         </section>

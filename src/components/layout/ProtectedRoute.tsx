@@ -12,13 +12,19 @@ export function ProtectedRoute({
   role?: Role | Role[]
   children: ReactNode
 }) {
-  const { session, profile, loading } = useAuth()
+  const { session, profile, loading, signOut } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
+
+  async function goToLogin() {
+    await signOut()
+    navigate('/login', { replace: true })
+  }
 
   if (loading) return <Loader label="Checking your session…" />
   if (!session)
     return <Navigate to="/login" replace state={{ from: location.pathname }} />
+  if (!profile) return <Loader label="Loading your account…" />
 
   if (profile?.status === 'pending' && profile.role !== 'admin') {
     return (
@@ -58,7 +64,7 @@ export function ProtectedRoute({
           </div>
 
           <p className="mt-6 text-center text-xs leading-5 text-slate-400">We’ll notify you when an administrator makes a decision.</p>
-          <button type="button" onClick={() => navigate(-1)} className="mt-5 w-full rounded-xl bg-navy-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-navy-800">Back</button>
+          <button type="button" onClick={() => void goToLogin()} className="mt-5 w-full rounded-xl bg-navy-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-navy-800">Back to login</button>
         </div>
       </div>
     )

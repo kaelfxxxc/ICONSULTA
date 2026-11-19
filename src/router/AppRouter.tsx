@@ -33,6 +33,7 @@ import AdminSchedule from '../pages/admin/Schedule'
 function PublicOnly({ children }: { children: ReactNode }) {
   const { session, profile, loading } = useAuth()
   if (loading) return <Loader label="Loading…" />
+  if (session && !profile) return <Loader label="Loading your account…" />
   if (session)
     return <Navigate to={profile ? ROLE_HOME[profile.role] : '/student'} replace />
   return <>{children}</>
@@ -43,6 +44,7 @@ function RootRedirect() {
   const { session, profile, loading } = useAuth()
   if (loading) return <Loader label="Loading…" />
   if (!session) return <Navigate to="/login" replace />
+  if (!profile) return <Loader label="Loading your account…" />
   return <Navigate to={profile ? ROLE_HOME[profile.role] : '/student'} replace />
 }
 

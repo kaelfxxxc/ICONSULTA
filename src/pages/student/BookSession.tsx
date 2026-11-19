@@ -83,7 +83,7 @@ function localDayKey(iso: string): string {
 export default function BookSession() {
   const navigate = useNavigate()
   const [params] = useSearchParams()
-  const { data: fp } = useProfile()
+  const { data: fp, isLoading: loadingProfile, error: profileError } = useProfile()
   const studentId = fp?.student?.id
 
   const [instructorId, setInstructorId] = useState<string | null>(
@@ -106,6 +106,7 @@ export default function BookSession() {
   const { data: availability } = useAvailability(instructorId ?? undefined)
   const { data: busySlots, isLoading: loadingBusySlots } = useInstructorBusySlots(instructorId ?? undefined, date)
   const create = useCreateAppointment()
+
   const hasDateSpecificAvailability = useMemo(
     () => (availability ?? []).some((slot) => slot.available_date),
     [availability],
@@ -166,6 +167,16 @@ export default function BookSession() {
         : s.day_of_week === isoWeekday(date) && s.is_available,
     ) &&
     !!busySlots && busySlots.length > 0
+
+  if (loadingProfile) return <Loader label="Loading your student profile…" />
+  if (profileError) {
+    return (
+      <div className="rounded-2xl border border-red-100 bg-red-50 p-6 text-sm text-red-700">
+        Could not load your student profile. Please refresh the page and try again.
+        <p className="mt-2 text-xs text-red-600">{profileError.message}</p>
+      </div>
+    )
+  }
 
   async function handleBook() {
     setError(null)
@@ -415,11 +426,9 @@ export default function BookSession() {
             )}
 
             <button
+              type="button"
               onClick={handleBook}
-              disabled={
-                create.isPending || loadingBusySlots || timeTaken ||
-                selectedSlotUnavailable || !studentId || !time || !reason.trim()
-              }
+              disabled={create.isPending}
               className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-navy-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-navy-800 disabled:cursor-not-allowed disabled:bg-navy-300"
             >
               {create.isPending ? (

@@ -1,6 +1,8 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-const GEMINI_MODEL = 'gemini-3.8-flash'
+// Keep this on a generally available Gemini model. The browser never receives
+// the API key; it is read from Supabase Edge Function secrets only.
+const GEMINI_MODEL = 'gemini-2.5-flash'
 const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`
 
 const corsHeaders = {
@@ -98,6 +100,7 @@ Deno.serve(async (req) => {
 
   let summary: string | null = null
   let generatedWithGemini = false
+  let geminiFailure: string | null = null
 
   // Generate only from recorded speech. Never infer discussion points that
   // aren't present in the transcript.
@@ -136,10 +139,14 @@ Deno.serve(async (req) => {
           summary = text.trim()
           generatedWithGemini = !!summary
         }
+      } else {
+        geminiFailure = `Gemini request failed (${res.status})`
       }
-    } catch {
-      // fall through to the composed summary below
+    } catch (error) {
+      geminiFailure = error instanceof Error ? error.message : 'Gemini request failed'
     }
+  } else if (!GEMINI_API_KEY) {
+    geminiFailure = 'GEMINI_API_KEY is not configured in Supabase Edge Function secrets'
   }
 
   if (!summary) {
@@ -163,5 +170,6 @@ Deno.serve(async (req) => {
     ok: true,
     appointment_id: appointmentId,
     source: generatedWithGemini ? 'gemini' : 'unavailable',
+    ...(geminiFailure ? { warning: geminiFailure } : {}),
   })
 })

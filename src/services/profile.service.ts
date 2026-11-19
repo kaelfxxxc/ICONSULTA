@@ -44,18 +44,32 @@ export async function getFullProfile(
   let instructor: InstructorProfile | null = null
 
   if (role === 'student') {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('student_profiles')
       .select('*')
       .eq('user_id', userId)
       .maybeSingle()
-    student = (data as StudentProfile | null) ?? null
+    if (error) throw error
+    if (!data) {
+      // Older accounts can predate the auth trigger. Repair the missing role
+      // profile so booking can always resolve the student's profile id.
+      const { data: repaired, error: repairError } = await supabase
+        .from('student_profiles')
+        .upsert({ user_id: userId }, { onConflict: 'user_id' })
+        .select('*')
+        .single()
+      if (repairError) throw repairError
+      student = repaired as StudentProfile
+    } else {
+      student = data as StudentProfile
+    }
   } else if (role === 'instructor') {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('instructor_profiles')
       .select('*')
       .eq('user_id', userId)
       .maybeSingle()
+    if (error) throw error
     instructor = (data as InstructorProfile | null) ?? null
   }
 

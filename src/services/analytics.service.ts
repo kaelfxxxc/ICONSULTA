@@ -114,6 +114,7 @@ export interface AdminUserRow extends User {
 export interface AdminUsersPage {
   rows: AdminUserRow[]
   count: number
+  pendingCount: number
   page: number
   pageSize: number
 }
@@ -137,8 +138,12 @@ export async function listAdminUsers(
   if (s) q = q.or(`name.ilike.%${s}%,email.ilike.%${s}%`)
   q = q.order('created_at', { ascending: false }).range(from, to)
 
-  const { data, error, count } = await q
+  const [{ data, error, count }, pendingResult] = await Promise.all([
+    q,
+    supabase.from('users').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+  ])
   if (error) throw error
+  if (pendingResult.error) throw pendingResult.error
 
   const rows = (data ?? []).map((u: Record<string, unknown>): AdminUserRow => {
     const student = firstOf<{ department: Department | null }>(u.student)
@@ -147,7 +152,7 @@ export async function listAdminUsers(
     return { ...(u as unknown as User), department }
   })
 
-  return { rows, count: count ?? 0, page, pageSize: ADMIN_USERS_PAGE_SIZE }
+  return { rows, count: count ?? 0, pendingCount: pendingResult.count ?? 0, page, pageSize: ADMIN_USERS_PAGE_SIZE }
 }
 
 export async function updateUserStatus(
