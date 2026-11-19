@@ -71,6 +71,7 @@ export function useUploadProfilePhoto() {
       if (!session?.user.id) throw new Error('Not signed in.')
       const url = await uploadProfilePhoto(session.user.id, file)
       await updateUserProfile(session.user.id, { profile_picture_url: url })
+      return url
     },
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: qk.profile(session?.user.id) })

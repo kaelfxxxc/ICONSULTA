@@ -22,7 +22,7 @@ export function DashboardLayout() {
     <div className="flex h-full bg-slate-100">
       {/* Desktop sidebar */}
       <div className="hidden lg:block">
-        <Sidebar role={role} name={profile?.name} />
+        <Sidebar role={role} name={profile?.name} photoUrl={profile?.profile_picture_url} />
       </div>
 
       {/* Mobile drawer */}
@@ -48,6 +48,7 @@ export function DashboardLayout() {
           <Sidebar
             role={role}
             name={profile?.name}
+            photoUrl={profile?.profile_picture_url}
             onNavigate={() => setDrawerOpen(false)}
           />
         </div>

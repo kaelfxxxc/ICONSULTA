@@ -81,10 +81,12 @@ function SettingsForm({ data, role }: { data: FullProfile; role: Role }) {
 
   const [saved, setSaved] = useState(false)
   const [tab, setTab] = useState<Tab>('personal')
+  const [photoUrl, setPhotoUrl] = useState(data.user.profile_picture_url)
 
   async function handlePhotoChange(file: File | undefined) {
     if (!file) return
-    await uploadPhoto.mutateAsync(file)
+    const url = await uploadPhoto.mutateAsync(file)
+    setPhotoUrl(url)
   }
 
   // The Personal panel is always present; the second tab is the role's own profile.
@@ -137,7 +139,7 @@ function SettingsForm({ data, role }: { data: FullProfile; role: Role }) {
       {/* Profile card — full-width row: avatar, identity, role badge. */}
       <SectionCard>
         <div className="flex flex-wrap items-center gap-4">
-          <Avatar name={data.user.name} src={data.user.profile_picture_url} size="lg" />
+          <Avatar name={data.user.name} src={photoUrl} size="lg" />
           <label className="cursor-pointer rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
             {uploadPhoto.isPending ? 'Uploading…' : 'Upload photo'}
             <input

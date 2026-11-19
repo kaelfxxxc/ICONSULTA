@@ -18,11 +18,13 @@ export function Brand({ compact: _compact = false }: { compact?: boolean }) {
 export function Sidebar({
   role,
   name,
+  photoUrl,
   subtitle,
   onNavigate,
 }: {
   role: Role
   name: string | null | undefined
+  photoUrl?: string | null
   subtitle?: string | null
   onNavigate?: () => void
 }) {
@@ -37,7 +39,7 @@ export function Sidebar({
       {/* Context block */}
       {role === 'instructor' ? (
         <div className="mx-3 mb-2 flex items-center gap-3 rounded-xl bg-slate-50 p-3">
-          <Avatar name={name} size="sm" />
+          <Avatar name={name} src={photoUrl} size="sm" />
           <div className="min-w-0">
             <div className="truncate text-sm font-semibold text-slate-800">
               {name ?? 'Instructor'}
