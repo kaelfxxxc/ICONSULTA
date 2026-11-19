@@ -35,9 +35,9 @@ export async function startAppointmentCall(appointmentId: string): Promise<strin
   return data
 }
 
-export async function generateAppointmentSummary(appointmentId: string): Promise<void> {
+export async function generateAppointmentSummary(appointmentId: string, language = 'English'): Promise<void> {
   const { error } = await supabase.functions.invoke('generate-summary', {
-    body: { appointment_id: appointmentId },
+    body: { appointment_id: appointmentId, language },
   })
   if (error) throw error
 }
@@ -54,7 +54,7 @@ export async function updateResolution(
 }
 
 /** Complete the appointment, save its live transcript, then generate the final summary. */
-export async function endSession(appointmentId: string, transcript = ''): Promise<void> {
+export async function endSession(appointmentId: string, transcript = '', language = 'English'): Promise<void> {
   await completeAppointment(appointmentId)
 
   const cleanedTranscript = transcript.trim()
@@ -66,5 +66,5 @@ export async function endSession(appointmentId: string, transcript = ''): Promis
     if (error) throw error
   }
 
-  await generateAppointmentSummary(appointmentId)
+  await generateAppointmentSummary(appointmentId, language)
 }

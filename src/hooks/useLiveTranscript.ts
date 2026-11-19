@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { supabase } from '../lib/supabase'
 
 interface SpeechAlternative { transcript: string }
 interface SpeechResult { isFinal: boolean; length: number; [index: number]: SpeechAlternative }
@@ -25,7 +26,9 @@ function getSpeechRecognition(): SpeechRecognitionConstructor | undefined {
 }
 
 /** Browser speech recognition provides live captions; the Gemini key stays server-side. */
-export function useLiveTranscript() {
+export type TranscriptLanguage = 'en-US' | 'fil-PH' | 'ceb-PH'
+
+export function useLiveTranscript(roomId?: string, speakerName = 'Participant', language: TranscriptLanguage = 'en-US') {
   const [supported, setSupported] = useState(false)
   const [listening, setListening] = useState(false)
   const [transcript, setTranscript] = useState('')
@@ -35,6 +38,22 @@ export function useLiveTranscript() {
   const shouldListen = useRef(false)
   const finalText = useRef('')
   const interimText = useRef('')
+  const sharedText = useRef('')
+  const channel = useRef<ReturnType<typeof supabase.channel> | null>(null)
+
+  useEffect(() => {
+    if (!roomId) return
+    const room = supabase.channel(`transcript:${roomId}`)
+      .on('broadcast', { event: 'caption' }, ({ payload }) => {
+        if (!payload?.text || payload.speaker === speakerName) return
+        const line = `${payload.speaker}: ${payload.text}`
+        sharedText.current = `${sharedText.current}\n${line}`.trim()
+        setTranscript((current) => current ? `${current}\n${line}` : line)
+      })
+      .subscribe()
+    channel.current = room
+    return () => { void supabase.removeChannel(room); channel.current = null }
+  }, [roomId, speakerName])
 
   useEffect(() => {
     setSupported(!!getSpeechRecognition())
@@ -60,7 +79,7 @@ export function useLiveTranscript() {
       recognition.current = instance
       instance.continuous = true
       instance.interimResults = true
-      instance.lang = navigator.language || 'en-US'
+      instance.lang = language
       instance.onresult = (event) => {
         let final = ''
         let pending = ''
@@ -71,7 +90,10 @@ export function useLiveTranscript() {
           if (result.isFinal) final += `${words} `
           else pending += `${words} `
         }
-        if (final) finalText.current = `${finalText.current} ${final}`.trim()
+        if (final) {
+          finalText.current = `${finalText.current} ${final}`.trim()
+          void channel.current?.send({ type: 'broadcast', event: 'caption', payload: { speaker: speakerName, text: final.trim() } })
+        }
         interimText.current = pending.trim()
         setTranscript(finalText.current)
         setInterim(interimText.current)
@@ -104,7 +126,7 @@ export function useLiveTranscript() {
       }
     }
     begin()
-  }, [])
+  }, [language, speakerName])
 
   const stop = useCallback(() => {
     shouldListen.current = false
@@ -113,7 +135,7 @@ export function useLiveTranscript() {
   }, [])
 
   const getTranscript = useCallback(() =>
-    [finalText.current, interimText.current].filter(Boolean).join(' ').trim(), [])
+    [finalText.current, sharedText.current, interimText.current].filter(Boolean).join('\n').trim(), [])
 
   return { supported, listening, transcript, interim, error, start, stop, getTranscript }
 }

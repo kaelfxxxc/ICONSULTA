@@ -24,7 +24,11 @@ export function useAdminUsers(filters: AdminUserFilters = {}) {
 
 export function useReviewUserRegistration() {
   const qc = useQueryClient()
-  return useMutation({ mutationFn: (v: { id: string; decision: 'approved' | 'rejected'; reason?: string }) => reviewUserRegistration(v.id, v.decision, v.reason), onSuccess: () => { void qc.invalidateQueries({ queryKey: ['adminUsers'] }) } })
+  return useMutation({
+    mutationFn: (v: { id: string; decision: 'approved' | 'rejected'; reason?: string }) =>
+      reviewUserRegistration(v.id, v.decision, v.reason),
+    onSettled: () => { void qc.invalidateQueries({ queryKey: ['adminUsers'] }) },
+  })
 }
 
 export function useUpdateUserStatus() {

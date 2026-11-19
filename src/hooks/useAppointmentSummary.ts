@@ -30,7 +30,8 @@ export function useVideoSession(appointmentId?: string) {
 export function useEndSession(appointmentId?: string) {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (transcript: string) => endSession(appointmentId!, transcript),
+    mutationFn: ({ transcript, language }: { transcript: string; language: string }) =>
+      endSession(appointmentId!, transcript, language),
     onSettled: () => {
       void qc.invalidateQueries({ queryKey: qk.summary(appointmentId) })
       void qc.invalidateQueries({ queryKey: qk.videoSession(appointmentId) })
@@ -43,7 +44,7 @@ export function useEndSession(appointmentId?: string) {
 export function useGenerateAppointmentSummary(appointmentId?: string) {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: () => generateAppointmentSummary(appointmentId!),
+    mutationFn: (language: string = 'English') => generateAppointmentSummary(appointmentId!, language),
     onSettled: () => qc.invalidateQueries({ queryKey: qk.summary(appointmentId) }),
   })
 }

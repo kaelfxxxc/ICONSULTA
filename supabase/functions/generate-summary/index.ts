@@ -33,6 +33,7 @@ Deno.serve(async (req) => {
   try {
     const body = await req.json()
     appointmentId = body?.appointment_id ?? body?.appointmentId
+    var language = body?.language ?? 'English'
   } catch {
     return json({ error: 'Invalid JSON body' }, 400)
   }
@@ -115,6 +116,7 @@ Deno.serve(async (req) => {
           contents: [{
             role: 'user',
             parts: [{ text:
+              `Create a concise, factual consultation summary in ${language}. ` +
               `Create a concise, factual consultation summary based only on the transcript below. ` +
               `Include the student's main questions, instructor guidance, and agreed next steps when stated. ` +
               `Do not invent facts or advice. Appointment topic: "${reason}". ` +

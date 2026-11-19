@@ -170,8 +170,8 @@ export async function reviewUserRegistration(id: string, decision: 'approved' | 
   if (error) throw error
   const { error: auditError } = await supabase.from('account_approval_audit').insert({ user_id: id, admin_user_id: auth.user?.id, decision, reason: reason ?? null })
   if (auditError) throw auditError
-  const { error: noticeError } = await supabase.from('notifications').insert({ user_id: id, type: 'system', title: `Account ${decision}`, content: decision === 'approved' ? 'Your account has been approved. You can now use ICONSULTA.' : `Your account registration was rejected. Reason: ${reason ?? 'Not specified'}.` })
-  if (noticeError) throw noticeError
+  // Notifications are created by trusted server-side code. Do not make the
+  // admin's decision fail because the client is not allowed to insert them.
 }
 
 /** Live admin dashboard: subscribe to analytics_metrics changes (any event) and

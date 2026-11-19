@@ -9,7 +9,7 @@ import {
 } from '../../hooks/useAppointmentSummary'
 import { startAppointmentCall } from '../../services/session.service'
 import { useWebRTC } from '../../hooks/useWebRTC'
-import { useLiveTranscript } from '../../hooks/useLiveTranscript'
+import { useLiveTranscript, type TranscriptLanguage } from '../../hooks/useLiveTranscript'
 import { AiSummaryPanel } from '../../components/dashboard'
 import { Avatar, Loader } from '../../components/common'
 import { Brand } from '../../components/layout/Sidebar'
@@ -49,7 +49,9 @@ export default function VideoSession() {
   const { data: summary } = useAppointmentSummary(appointmentId)
   const endSession = useEndSession(appointmentId)
   const retrySummary = useGenerateAppointmentSummary(appointmentId)
-  const liveTranscript = useLiveTranscript()
+  const [summaryLanguage, setSummaryLanguage] = useState<TranscriptLanguage>('en-US')
+  const selfName = profile?.name ?? 'You'
+  const liveTranscript = useLiveTranscript(appointmentId, selfName, summaryLanguage)
   const [summaryError, setSummaryError] = useState<string | null>(null)
   const [callStartedAt, setCallStartedAt] = useState<string | null>(null)
   const [callLimitSetupError, setCallLimitSetupError] = useState<string | null>(null)
@@ -99,7 +101,6 @@ export default function VideoSession() {
 
   const home = profile ? ROLE_HOME[profile.role] : '/'
   const isInstructor = profile?.role === 'instructor'
-  const selfName = profile?.name ?? 'You'
   const counterpartName = isInstructor
     ? (appt?.student?.user?.name ?? 'Student')
     : (appt?.instructor?.user?.name ?? 'Instructor')
@@ -108,11 +109,20 @@ export default function VideoSession() {
     liveTranscript.stop()
     stopAll()
     try {
-      await endSession.mutateAsync(liveTranscript.getTranscript())
+      await endSession.mutateAsync({
+        transcript: liveTranscript.getTranscript(),
+        language: summaryLanguage === 'fil-PH' ? 'Tagalog' : summaryLanguage === 'ceb-PH' ? 'Cebuano' : 'English',
+      })
     } catch (error) {
       setSummaryError(error instanceof Error ? error.message : 'The session ended, but the transcript or summary could not be saved.')
     }
   }
+
+  useEffect(() => {
+    if (phase === 'connected' && !ended && liveTranscript.supported && !liveTranscript.listening) {
+      liveTranscript.start()
+    }
+  }, [phase, ended, liveTranscript.supported])
 
   useEffect(() => {
     if (elapsed.seconds < 60 * 60 || ended || autoEndStarted.current) return
@@ -317,6 +327,18 @@ export default function VideoSession() {
                 <span className={cn('h-2 w-2 rounded-full', liveTranscript.listening ? 'animate-pulse bg-red-400' : 'bg-emerald-400')} />
                 Live Transcript
               </div>
+              {!ended && (
+                <select
+                  value={summaryLanguage}
+                  onChange={(event) => setSummaryLanguage(event.target.value as TranscriptLanguage)}
+                  className="rounded-lg border border-white/15 bg-navy-900 px-2 py-1.5 text-xs text-white/80"
+                  aria-label="Transcript and summary language"
+                >
+                  <option value="en-US">English</option>
+                  <option value="fil-PH">Tagalog</option>
+                  <option value="ceb-PH">Cebuano</option>
+                </select>
+              )}
               {!ended && liveTranscript.supported && (
                 <button
                   type="button"
@@ -361,7 +383,7 @@ export default function VideoSession() {
                 <button
                   type="button"
                   disabled={retrySummary.isPending}
-                  onClick={() => retrySummary.mutate()}
+                  onClick={() => retrySummary.mutate(summaryLanguage === 'fil-PH' ? 'Tagalog' : summaryLanguage === 'ceb-PH' ? 'Cebuano' : 'English')}
                   className="rounded-lg border border-violet-300/30 bg-violet-500/10 px-3 py-2 text-sm font-medium text-violet-100 hover:bg-violet-500/20 disabled:opacity-50"
                 >
                   {retrySummary.isPending ? 'Generating summary…' : 'Generate AI summary'}

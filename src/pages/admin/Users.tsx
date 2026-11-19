@@ -172,7 +172,7 @@ export default function AdminUsers() {
                       <Badge tone={STATUS_TONE[u.status]}>{u.status}</Badge>
                     </td>
                     <td className="px-5 py-3 text-right">
-                      {u.status === 'pending' ? <div className="flex justify-end gap-2"><button onClick={() => review.mutate({ id: u.id, decision: 'approved' })} className="rounded-lg px-3 py-1.5 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">Approve</button><button onClick={() => { const reason = window.prompt('Reason for rejection (required):')?.trim(); if (reason) review.mutate({ id: u.id, decision: 'rejected', reason }) }} className="rounded-lg px-3 py-1.5 text-xs font-semibold text-red-600 ring-1 ring-red-200">Reject</button></div> :
+                      {u.status === 'pending' ? <div className="flex justify-end gap-2"><button type="button" disabled={review.isPending} onClick={() => review.mutate({ id: u.id, decision: 'approved' })} className="rounded-lg px-3 py-1.5 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200 hover:bg-emerald-50 disabled:cursor-wait disabled:opacity-50">{review.isPending ? 'Saving…' : 'Approve'}</button><button type="button" disabled={review.isPending} onClick={() => { const reason = window.prompt('Reason for rejection (required):')?.trim(); if (reason) review.mutate({ id: u.id, decision: 'rejected', reason }) }} className="rounded-lg px-3 py-1.5 text-xs font-semibold text-red-600 ring-1 ring-red-200 hover:bg-red-50 disabled:cursor-wait disabled:opacity-50">Reject</button></div> :
                       <button
                         onClick={() => toggleStatus(u.id, u.status)}
                         disabled={updateStatus.isPending}
@@ -192,6 +192,8 @@ export default function AdminUsers() {
             </table>
           </div>
         )}
+
+        {review.error && <p className="border-t border-red-100 bg-red-50 px-5 py-3 text-sm text-red-700">{review.error.message}</p>}
 
         {/* Pagination */}
         {rows.length > 0 && (
