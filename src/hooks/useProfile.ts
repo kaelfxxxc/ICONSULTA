@@ -5,6 +5,7 @@ import {
   updateInstructorProfile,
   updateStudentProfile,
   updateUserProfile,
+  uploadProfilePhoto,
 } from '../services/profile.service'
 import { useSupabaseQuery } from './useSupabaseQuery'
 import { qk } from './queryKeys'
@@ -57,6 +58,22 @@ export function useUpdateProfile() {
     },
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: qk.profile(userId) })
+      if (profile) await refreshProfile()
+    },
+  })
+}
+
+export function useUploadProfilePhoto() {
+  const { session, profile, refreshProfile } = useAuth()
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (file: File) => {
+      if (!session?.user.id) throw new Error('Not signed in.')
+      const url = await uploadProfilePhoto(session.user.id, file)
+      await updateUserProfile(session.user.id, { profile_picture_url: url })
+    },
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: qk.profile(session?.user.id) })
       if (profile) await refreshProfile()
     },
   })

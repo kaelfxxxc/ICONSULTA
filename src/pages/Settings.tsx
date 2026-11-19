@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useAuth } from '../context/authContext'
-import { useProfile, useUpdateProfile } from '../hooks/useProfile'
+import { useProfile, useUpdateProfile, useUploadProfilePhoto } from '../hooks/useProfile'
 import type { ProfileUpdate } from '../hooks/useProfile'
 import type { FullProfile } from '../services/profile.service'
 import { DEPARTMENTS, ROLE_LABEL } from '../utils/constants'
@@ -51,6 +51,7 @@ export default function Settings() {
 
 function SettingsForm({ data, role }: { data: FullProfile; role: Role }) {
   const update = useUpdateProfile()
+  const uploadPhoto = useUploadProfilePhoto()
 
   // users
   const [name, setName] = useState(data.user.name ?? '')
@@ -80,6 +81,11 @@ function SettingsForm({ data, role }: { data: FullProfile; role: Role }) {
 
   const [saved, setSaved] = useState(false)
   const [tab, setTab] = useState<Tab>('personal')
+
+  async function handlePhotoChange(file: File | undefined) {
+    if (!file) return
+    await uploadPhoto.mutateAsync(file)
+  }
 
   // The Personal panel is always present; the second tab is the role's own profile.
   // An admin has neither a student nor an instructor row (getFullProfile returns
@@ -131,7 +137,17 @@ function SettingsForm({ data, role }: { data: FullProfile; role: Role }) {
       {/* Profile card — full-width row: avatar, identity, role badge. */}
       <SectionCard>
         <div className="flex flex-wrap items-center gap-4">
-          <Avatar name={data.user.name} size="lg" />
+          <Avatar name={data.user.name} src={data.user.profile_picture_url} size="lg" />
+          <label className="cursor-pointer rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+            {uploadPhoto.isPending ? 'Uploading…' : 'Upload photo'}
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              className="sr-only"
+              disabled={uploadPhoto.isPending}
+              onChange={(e) => { void handlePhotoChange(e.target.files?.[0]); e.currentTarget.value = '' }}
+            />
+          </label>
           <div className="min-w-0 flex-1">
             <div className="truncate text-base font-semibold text-slate-800">
               {data.user.name}
@@ -145,6 +161,8 @@ function SettingsForm({ data, role }: { data: FullProfile; role: Role }) {
           </span>
         </div>
       </SectionCard>
+
+      {uploadPhoto.isError && <p className="text-sm text-red-600">{uploadPhoto.error.message}</p>}
 
       {/* Tab nav — same idiom as the instructor Requests page. Hidden when the role
           has only the one Personal panel (admin). */}

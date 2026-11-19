@@ -7,6 +7,21 @@ import type {
   User,
 } from '../types'
 
+export async function uploadProfilePhoto(userId: string, file: File): Promise<string> {
+  if (!file.type.startsWith('image/')) throw new Error('Please choose an image file.')
+  if (file.size > 5 * 1024 * 1024) throw new Error('Photo must be 5 MB or smaller.')
+  const extension = file.name.split('.').pop()?.toLowerCase() || 'jpg'
+  const path = `${userId}/profile.${extension}`
+  const { error } = await supabase.storage.from('profile-photos').upload(path, file, {
+    upsert: true,
+    contentType: file.type,
+    cacheControl: '3600',
+  })
+  if (error) throw error
+  const { data } = supabase.storage.from('profile-photos').getPublicUrl(path)
+  return `${data.publicUrl}?v=${Date.now()}`
+}
+
 export interface FullProfile {
   user: User
   student: StudentProfile | null
