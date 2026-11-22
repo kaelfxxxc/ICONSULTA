@@ -136,7 +136,8 @@ export default function VideoSession() {
 
   const retryableSummary = Boolean(
     summary?.summary?.includes('once the AI summary has been generated') ||
-    summary?.summary?.includes('Gemini could not generate the summary'),
+    summary?.summary?.includes('could not generate the summary') ||
+    summary?.summary?.includes('AI summary generation failed'),
   )
 
   if (isLoading) {
