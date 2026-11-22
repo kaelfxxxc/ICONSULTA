@@ -137,9 +137,20 @@ Deno.serve(async (req) => {
         if (text && typeof text === 'string') {
           summary = text.trim()
           generatedWithGemini = !!summary
+        } else {
+          geminiFailure = 'Gemini returned an empty summary'
         }
       } else {
-        geminiFailure = `Gemini request failed (${res.status})`
+        let detail = ''
+        try {
+          const errorBody = await res.json()
+          detail = typeof errorBody?.error?.message === 'string'
+            ? `: ${errorBody.error.message}`
+            : ''
+        } catch {
+          // Keep the HTTP status when Gemini does not return JSON.
+        }
+        geminiFailure = `Gemini request failed (${res.status})${detail}`
       }
     } catch (error) {
       geminiFailure = error instanceof Error ? error.message : 'Gemini request failed'

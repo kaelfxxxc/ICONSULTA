@@ -36,10 +36,13 @@ export async function startAppointmentCall(appointmentId: string): Promise<strin
 }
 
 export async function generateAppointmentSummary(appointmentId: string, language = 'English'): Promise<void> {
-  const { error } = await supabase.functions.invoke('generate-summary', {
+  const { data, error } = await supabase.functions.invoke('generate-summary', {
     body: { appointment_id: appointmentId, language },
   })
   if (error) throw error
+  if (data?.source === 'unavailable') {
+    throw new Error(data.warning ?? 'Gemini could not generate the summary.')
+  }
 }
 
 export async function updateResolution(
