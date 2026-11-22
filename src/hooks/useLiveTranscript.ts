@@ -41,6 +41,7 @@ export function useLiveTranscript(roomId?: string, speakerName = 'Participant', 
   const [interim, setInterim] = useState('')
   const [error, setError] = useState<string | null>(null)
   const recognition = useRef<SpeechRecognitionLike | null>(null)
+  const languageRef = useRef(language)
   const shouldListen = useRef(false)
   const finalText = useRef('')
   const interimText = useRef('')
@@ -96,8 +97,19 @@ export function useLiveTranscript(roomId?: string, speakerName = 'Participant', 
       recognition.current = instance
       instance.continuous = true
       instance.interimResults = true
-      instance.lang = language
+      instance.lang = languageRef.current
+      console.info('[live-transcript] recognizer started', { language: instance.lang })
       instance.onresult = (event) => {
+        const rawResults = Array.from({ length: event.results.length }, (_, index) => ({
+          index,
+          isFinal: event.results[index]?.isFinal,
+          text: event.results[index]?.[0]?.transcript ?? '',
+        }))
+        console.debug('[live-transcript] raw speech result', {
+          language: instance.lang,
+          resultIndex: event.resultIndex,
+          results: rawResults,
+        })
         let pending = ''
         for (let i = event.resultIndex; i < event.results.length; i += 1) {
           const result = event.results[i]
@@ -125,7 +137,15 @@ export function useLiveTranscript(roomId?: string, speakerName = 'Participant', 
         setInterim(interimText.current)
       }
       instance.onerror = (event) => {
-        if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+        console.warn('[live-transcript] speech recognition error', {
+          language: instance.lang,
+          error: event.error,
+        })
+        if (event.error === 'language-not-supported') {
+          shouldListen.current = false
+          setListening(false)
+          setError(`This browser speech engine does not support ${languageRef.current}. Try Chrome or a cloud speech engine.`)
+        } else if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
           shouldListen.current = false
           setListening(false)
           setError('Microphone access for transcription was denied. Allow it in browser settings and try again.')
@@ -152,7 +172,20 @@ export function useLiveTranscript(roomId?: string, speakerName = 'Participant', 
       }
     }
     begin()
-  }, [language, speakerName, translate])
+  }, [speakerName, translate])
+
+  useEffect(() => {
+    languageRef.current = language
+    if (!shouldListen.current) return
+
+    // SpeechRecognition does not reliably apply `lang` to an active session.
+    // Stop the old engine and create a new one with the selected language.
+    shouldListen.current = false
+    recognition.current?.abort()
+    setListening(false)
+    const timer = window.setTimeout(() => start(), 0)
+    return () => window.clearTimeout(timer)
+  }, [language, start])
 
   const stop = useCallback(() => {
     shouldListen.current = false

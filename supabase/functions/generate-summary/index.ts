@@ -2,9 +2,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 // Keep this on a generally available Gemini model. The browser never receives
 // the API key; it is read from Supabase Edge Function secrets only.
-// Use the broadly available stable Flash model. Some API keys return 404 for
-// 2.5 Flash even though the model is visible in the model list.
-const GEMINI_MODEL = 'gemini-2.0-flash'
+// Current Flash model accepted by the configured Gemini API project.
+const GEMINI_MODEL = 'gemini-3.8-flash'
 const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`
 
 const corsHeaders = {
