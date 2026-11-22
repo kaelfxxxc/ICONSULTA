@@ -108,32 +108,40 @@ Deno.serve(async (req) => {
   if (GEMINI_API_KEY && transcript?.trim()) {
     try {
       const controller = new AbortController()
-      // Gemini 3.8 can take longer than the old 20-second limit, especially
-      // for a long transcript. Keep the request bounded but allow generation
-      // enough time to complete in the Edge runtime.
-      const timeout = setTimeout(() => controller.abort(), 60_000)
-      const res = await fetch(GEMINI_ENDPOINT, {
-        method: 'POST',
-        signal: controller.signal,
-        headers: {
-          'x-goog-api-key': GEMINI_API_KEY,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents: [{
-            role: 'user',
-            parts: [{ text:
-              `Create a concise, factual consultation summary in ${language}, based only on the transcript below. ` +
-              `Include the student's main questions, instructor guidance, and agreed next steps when stated. ` +
-              `Do not invent facts or advice. Appointment topic: "${reason}". ` +
-              `Participants: ${withWhom}.\n\nTranscript:\n${transcript.slice(0, 24000)}`,
-            }],
+      // Allow enough time for a long consultation while keeping the request
+      // bounded so a stalled provider cannot run forever.
+      const timeout = setTimeout(() => controller.abort(), 90_000)
+      const requestBody = {
+        contents: [{
+          role: 'user',
+          parts: [{ text:
+            `Create a concise, factual summary in ${language} using only the transcript below. ` +
+            `Return 3 to 7 bullet points, with each bullet covering one important topic from the call. ` +
+            `Prioritize: the student's main questions or concerns, the instructor's explanations or guidance, ` +
+            `decisions made, unresolved issues, and agreed next steps. ` +
+            `Do not invent facts, advice, decisions, or topics. If something was not said, leave it out. ` +
+            `Start every point with "• ". Appointment topic: "${reason}". ` +
+            `Participants: ${withWhom}.\n\nTranscript:\n${transcript.slice(0, 12000)}`,
           }],
-          generationConfig: { temperature: 0.2, maxOutputTokens: 500 },
-        }),
-      })
+        }],
+        generationConfig: { temperature: 0.1, maxOutputTokens: 450 },
+      }
+      let res: Response | null = null
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        res = await fetch(GEMINI_ENDPOINT, {
+          method: 'POST',
+          signal: controller.signal,
+          headers: {
+            'x-goog-api-key': GEMINI_API_KEY,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody),
+        })
+        if (res.status !== 429 && res.status !== 503) break
+        if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 1000 * (attempt + 1)))
+      }
       clearTimeout(timeout)
-      if (res.ok) {
+      if (res?.ok) {
         const out = await res.json()
         const text = out?.candidates?.[0]?.content?.parts
           ?.map((part: { text?: string }) => part.text ?? '')
@@ -144,7 +152,7 @@ Deno.serve(async (req) => {
         } else {
           geminiFailure = 'Gemini returned an empty summary'
         }
-      } else {
+      } else if (res) {
         let detail = ''
         try {
           const errorBody = await res.json()
@@ -158,7 +166,7 @@ Deno.serve(async (req) => {
       }
     } catch (error) {
       geminiFailure = error instanceof DOMException && error.name === 'AbortError'
-        ? 'Gemini request timed out after 60 seconds'
+        ? 'Gemini request timed out after 90 seconds'
         : error instanceof Error ? error.message : 'Gemini request failed'
     }
   } else if (!GEMINI_API_KEY) {
