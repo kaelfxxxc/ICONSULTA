@@ -45,8 +45,8 @@ export default function InstructorDashboard() {
       requests: list.filter((a) => a.status === 'pending'),
       recent: list
         .filter((a) => a.status === 'completed')
-        .slice(-4)
-        .reverse(),
+        .slice()
+        .sort((a, b) => b.updated_at.localeCompare(a.updated_at)),
       todayCount: list.filter(
         (a) => a.status === 'approved' && a.scheduled_at.slice(0, 10) === today,
       ).length,
