@@ -47,7 +47,10 @@ export default function StudentAppointments() {
 
   const filtered = useMemo(() => {
     const m = TABS.find((t) => t.key === tab)!.match
-    return (appts ?? []).filter((a) => m(a.status))
+    return (appts ?? [])
+      .filter((a) => m(a.status))
+      .slice()
+      .sort((a, b) => b.created_at.localeCompare(a.created_at))
   }, [appts, tab])
 
   return (

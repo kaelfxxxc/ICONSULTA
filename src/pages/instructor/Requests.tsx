@@ -65,12 +65,15 @@ export default function InstructorRequests() {
 
   const filtered = useMemo(() => {
     const m = TABS.find((t) => t.key === tab)!.match
-    return (appts ?? []).filter((a) => {
-      if (!m(a.status)) return false
-      if (tab !== 'pending') return true
-      const day = localDay(a.scheduled_at)
-      return dateFilter === 'today' ? day === today : day > today
-    })
+    return (appts ?? [])
+      .filter((a) => {
+        if (!m(a.status)) return false
+        if (tab !== 'pending') return true
+        const day = localDay(a.scheduled_at)
+        return dateFilter === 'today' ? day === today : day > today
+      })
+      .slice()
+      .sort((a, b) => b.created_at.localeCompare(a.created_at))
   }, [appts, tab, dateFilter])
 
   const busy = approve.isPending || reject.isPending || complete.isPending

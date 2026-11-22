@@ -25,7 +25,7 @@ export async function listStudentAppointments(
     .from('appointments')
     .select(STUDENT_SELECT)
     .eq('student_id', studentProfileId)
-    .order('scheduled_at', { ascending: true })
+    .order('created_at', { ascending: false })
   if (error) throw error
   return (data ?? []).map(normalize)
 }
@@ -37,7 +37,7 @@ export async function listInstructorAppointments(
     .from('appointments')
     .select(INSTRUCTOR_SELECT)
     .eq('instructor_id', instructorProfileId)
-    .order('scheduled_at', { ascending: true })
+    .order('created_at', { ascending: false })
   if (error) throw error
   return (data ?? []).map(normalize)
 }

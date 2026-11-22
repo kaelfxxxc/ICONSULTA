@@ -196,7 +196,7 @@ export default function InstructorHistory() {
             (a.student?.user?.name ?? '').toLowerCase().includes(s),
         )
       : list
-    return filtered.sort((a, b) => b.scheduled_at.localeCompare(a.scheduled_at))
+    return filtered.sort((a, b) => b.created_at.localeCompare(a.created_at))
   }, [appts, search])
 
   /**
