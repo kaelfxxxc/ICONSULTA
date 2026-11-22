@@ -55,7 +55,13 @@ export async function updateResolution(
 
 /** Complete the appointment, save its live transcript, then generate the final summary. */
 export async function endSession(appointmentId: string, transcript = '', language = 'English'): Promise<void> {
-  await completeAppointment(appointmentId)
+  try {
+    await completeAppointment(appointmentId)
+  } catch (error) {
+    // A realtime update or a second participant may have completed the row
+    // first. The transcript and summary still need to be finalized.
+    if (!(error instanceof Error) || error.message !== 'This call has already ended.') throw error
+  }
 
   const cleanedTranscript = transcript.trim()
   if (cleanedTranscript) {

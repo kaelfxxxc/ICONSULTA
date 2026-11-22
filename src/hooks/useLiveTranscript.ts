@@ -76,6 +76,8 @@ export function useLiveTranscript(roomId?: string, speakerName = 'Participant', 
     const begin = () => {
       if (!shouldListen.current) return
       const instance = new Constructor()
+      const instanceFinals = new Map<number, string>()
+      const broadcastFinals = new Map<number, string>()
       recognition.current = instance
       instance.continuous = true
       instance.interimResults = true
@@ -83,17 +85,22 @@ export function useLiveTranscript(roomId?: string, speakerName = 'Participant', 
       instance.onresult = (event) => {
         let final = ''
         let pending = ''
-        for (let i = 0; i < event.results.length; i += 1) {
+        for (let i = event.resultIndex; i < event.results.length; i += 1) {
           const result = event.results[i]
           const words = result[0]?.transcript?.trim()
           if (!words) continue
-          if (result.isFinal) final += `${words} `
+          if (result.isFinal) {
+            const previous = instanceFinals.get(i)
+            instanceFinals.set(i, words)
+            if (!previous) final += `${words} `
+            if (broadcastFinals.get(i) !== words) {
+              broadcastFinals.set(i, words)
+              void channel.current?.send({ type: 'broadcast', event: 'caption', payload: { speaker: speakerName, text: words } })
+            }
+          }
           else pending += `${words} `
         }
-        if (final) {
-          finalText.current = `${finalText.current} ${final}`.trim()
-          void channel.current?.send({ type: 'broadcast', event: 'caption', payload: { speaker: speakerName, text: final.trim() } })
-        }
+        if (final) finalText.current = `${finalText.current} ${final}`.trim()
         interimText.current = pending.trim()
         setTranscript(finalText.current)
         setInterim(interimText.current)

@@ -57,6 +57,7 @@ export default function VideoSession() {
   const [callLimitSetupError, setCallLimitSetupError] = useState<string | null>(null)
   const [endedByLimit, setEndedByLimit] = useState(false)
   const autoEndStarted = useRef(false)
+  const endStarted = useRef(false)
 
   const ended = appt?.status === 'completed'
 
@@ -106,6 +107,8 @@ export default function VideoSession() {
     : (appt?.instructor?.user?.name ?? 'Instructor')
 
   async function handleEnd() {
+    if (endStarted.current) return
+    endStarted.current = true
     liveTranscript.stop()
     stopAll()
     try {

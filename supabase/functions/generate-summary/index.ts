@@ -119,8 +119,7 @@ Deno.serve(async (req) => {
           contents: [{
             role: 'user',
             parts: [{ text:
-              `Create a concise, factual consultation summary in ${language}. ` +
-              `Create a concise, factual consultation summary based only on the transcript below. ` +
+              `Create a concise, factual consultation summary in ${language}, based only on the transcript below. ` +
               `Include the student's main questions, instructor guidance, and agreed next steps when stated. ` +
               `Do not invent facts or advice. Appointment topic: "${reason}". ` +
               `Participants: ${withWhom}.\n\nTranscript:\n${transcript.slice(0, 24000)}`,
