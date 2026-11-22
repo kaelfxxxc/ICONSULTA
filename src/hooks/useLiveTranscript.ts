@@ -17,6 +17,12 @@ interface SpeechRecognitionLike {
 }
 type SpeechRecognitionConstructor = new () => SpeechRecognitionLike
 
+const languageNames: Record<TranscriptLanguage, string> = {
+  'en-US': 'English',
+  'fil-PH': 'Tagalog',
+  'ceb-PH': 'Cebuano',
+}
+
 function getSpeechRecognition(): SpeechRecognitionConstructor | undefined {
   const speechWindow = window as Window & {
     SpeechRecognition?: SpeechRecognitionConstructor
@@ -40,6 +46,16 @@ export function useLiveTranscript(roomId?: string, speakerName = 'Participant', 
   const interimText = useRef('')
   const sharedText = useRef('')
   const channel = useRef<ReturnType<typeof supabase.channel> | null>(null)
+  const translationQueue = useRef(Promise.resolve())
+
+  const translate = useCallback(async (text: string) => {
+    if (language === 'en-US') return text
+    const { data, error } = await supabase.functions.invoke('translate-transcript', {
+      body: { text, language: languageNames[language] },
+    })
+    if (error || typeof data?.text !== 'string' || !data.text.trim()) return text
+    return data.text.trim()
+  }, [language])
 
   useEffect(() => {
     if (!roomId) return
@@ -76,31 +92,34 @@ export function useLiveTranscript(roomId?: string, speakerName = 'Participant', 
     const begin = () => {
       if (!shouldListen.current) return
       const instance = new Constructor()
-      const instanceFinals = new Map<number, string>()
       const broadcastFinals = new Map<number, string>()
       recognition.current = instance
       instance.continuous = true
       instance.interimResults = true
       instance.lang = language
       instance.onresult = (event) => {
-        let final = ''
         let pending = ''
         for (let i = event.resultIndex; i < event.results.length; i += 1) {
           const result = event.results[i]
           const words = result[0]?.transcript?.trim()
           if (!words) continue
           if (result.isFinal) {
-            const previous = instanceFinals.get(i)
-            instanceFinals.set(i, words)
-            if (!previous) final += `${words} `
             if (broadcastFinals.get(i) !== words) {
               broadcastFinals.set(i, words)
-              void channel.current?.send({ type: 'broadcast', event: 'caption', payload: { speaker: speakerName, text: words } })
+              translationQueue.current = translationQueue.current.then(async () => {
+                const translated = await translate(words)
+                finalText.current = `${finalText.current} ${translated}`.trim()
+                setTranscript(finalText.current)
+                await channel.current?.send({
+                  type: 'broadcast',
+                  event: 'caption',
+                  payload: { speaker: speakerName, text: translated },
+                })
+              })
             }
           }
           else pending += `${words} `
         }
-        if (final) finalText.current = `${finalText.current} ${final}`.trim()
         interimText.current = pending.trim()
         setTranscript(finalText.current)
         setInterim(interimText.current)
@@ -133,7 +152,7 @@ export function useLiveTranscript(roomId?: string, speakerName = 'Participant', 
       }
     }
     begin()
-  }, [language, speakerName])
+  }, [language, speakerName, translate])
 
   const stop = useCallback(() => {
     shouldListen.current = false
