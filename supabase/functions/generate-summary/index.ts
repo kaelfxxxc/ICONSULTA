@@ -108,7 +108,10 @@ Deno.serve(async (req) => {
   if (GEMINI_API_KEY && transcript?.trim()) {
     try {
       const controller = new AbortController()
-      const timeout = setTimeout(() => controller.abort(), 20_000)
+      // Gemini 3.8 can take longer than the old 20-second limit, especially
+      // for a long transcript. Keep the request bounded but allow generation
+      // enough time to complete in the Edge runtime.
+      const timeout = setTimeout(() => controller.abort(), 60_000)
       const res = await fetch(GEMINI_ENDPOINT, {
         method: 'POST',
         signal: controller.signal,
@@ -154,7 +157,9 @@ Deno.serve(async (req) => {
         geminiFailure = `Gemini request failed (${res.status})${detail}`
       }
     } catch (error) {
-      geminiFailure = error instanceof Error ? error.message : 'Gemini request failed'
+      geminiFailure = error instanceof DOMException && error.name === 'AbortError'
+        ? 'Gemini request timed out after 60 seconds'
+        : error instanceof Error ? error.message : 'Gemini request failed'
     }
   } else if (!GEMINI_API_KEY) {
     geminiFailure = 'GEMINI_API_KEY is not configured in Supabase Edge Function secrets'
