@@ -1,5 +1,5 @@
-const GEMINI_MODEL = 'gemini-3.8-flash'
-const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`
+const META_MODEL = 'muse-spark-1.3'
+const META_ENDPOINT = 'https://api.meta.ai/v1/chat/completions'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -18,7 +18,7 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405)
 
-  const apiKey = Deno.env.get('GEMINI_API_KEY')
+  const apiKey = Deno.env.get('META_API_KEY')
   if (!apiKey) return json({ error: 'Translation service is not configured' }, 503)
 
   let text: string
@@ -36,22 +36,23 @@ Deno.serve(async (req) => {
   if (language === 'English') return json({ text })
 
   try {
-    const response = await fetch(GEMINI_ENDPOINT, {
+    const response = await fetch(META_ENDPOINT, {
       method: 'POST',
-      headers: { 'x-goog-api-key': apiKey, 'Content-Type': 'application/json' },
+      headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        contents: [{ role: 'user', parts: [{ text:
+        model: META_MODEL,
+        messages: [{ role: 'user', content:
           `Translate the following spoken sentence into ${language}. Return only the translation. ` +
           `Do not add, remove, summarize, or invent anything. Preserve names and meaning. ` +
           `If it is already in ${language}, return it unchanged.\n\n${text}`,
-        }] }],
-        generationConfig: { temperature: 0, maxOutputTokens: 300 },
+        }],
+        temperature: 0,
+        max_tokens: 300,
       }),
     })
     if (!response.ok) return json({ error: 'Translation failed' }, 502)
     const output = await response.json()
-    const translated = output?.candidates?.[0]?.content?.parts
-      ?.map((part: { text?: string }) => part.text ?? '').join(' ').trim()
+    const translated = output?.choices?.[0]?.message?.content?.trim()
     return translated ? json({ text: translated }) : json({ error: 'Translation returned no text' }, 502)
   } catch {
     return json({ error: 'Translation failed' }, 502)

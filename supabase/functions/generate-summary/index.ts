@@ -3,8 +3,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 // Keep this on a generally available Gemini model. The browser never receives
 // the API key; it is read from Supabase Edge Function secrets only.
 // Current Flash model accepted by the configured Gemini API project.
-const GEMINI_MODEL = 'gemini-3.8-flash'
-const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`
+const META_MODEL = 'muse-spark-1.3'
+const META_ENDPOINT = 'https://api.meta.ai/v1/chat/completions'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -26,7 +26,7 @@ Deno.serve(async (req) => {
 
   const SUPABASE_URL = Deno.env.get('SUPABASE_URL')
   const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-  const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY')
+  const META_API_KEY = Deno.env.get('META_API_KEY')
   if (!SUPABASE_URL || !SERVICE_ROLE) {
     return json({ error: 'Server not configured' }, 500)
   }
@@ -105,16 +105,15 @@ Deno.serve(async (req) => {
 
   // Generate only from recorded speech. Never infer discussion points that
   // aren't present in the transcript.
-  if (GEMINI_API_KEY && transcript?.trim()) {
+  if (META_API_KEY && transcript?.trim()) {
     try {
       const controller = new AbortController()
       // Allow enough time for a long consultation while keeping the request
       // bounded so a stalled provider cannot run forever.
       const timeout = setTimeout(() => controller.abort(), 90_000)
       const requestBody = {
-        contents: [{
-          role: 'user',
-          parts: [{ text:
+        model: META_MODEL,
+        messages: [{ role: 'user', content:
             `Create a concise, factual summary in ${language} using only the transcript below. ` +
             `Return 3 to 7 bullet points, with each bullet covering one important topic from the call. ` +
             `Prioritize: the student's main questions or concerns, the instructor's explanations or guidance, ` +
@@ -122,17 +121,17 @@ Deno.serve(async (req) => {
             `Do not invent facts, advice, decisions, or topics. If something was not said, leave it out. ` +
             `Start every point with "• ". Appointment topic: "${reason}". ` +
             `Participants: ${withWhom}.\n\nTranscript:\n${transcript.slice(0, 12000)}`,
-          }],
         }],
-        generationConfig: { temperature: 0.1, maxOutputTokens: 450 },
+        temperature: 0.1,
+        max_tokens: 450,
       }
       let res: Response | null = null
       for (let attempt = 0; attempt < 3; attempt += 1) {
-        res = await fetch(GEMINI_ENDPOINT, {
+        res = await fetch(META_ENDPOINT, {
           method: 'POST',
           signal: controller.signal,
           headers: {
-            'x-goog-api-key': GEMINI_API_KEY,
+            Authorization: `Bearer ${META_API_KEY}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(requestBody),
@@ -143,9 +142,7 @@ Deno.serve(async (req) => {
       clearTimeout(timeout)
       if (res?.ok) {
         const out = await res.json()
-        const text = out?.candidates?.[0]?.content?.parts
-          ?.map((part: { text?: string }) => part.text ?? '')
-          .join(' ')
+        const text = out?.choices?.[0]?.message?.content
         if (text && typeof text === 'string') {
           summary = text.trim()
           generatedWithGemini = !!summary
@@ -169,8 +166,8 @@ Deno.serve(async (req) => {
         ? 'Gemini request timed out after 90 seconds'
         : error instanceof Error ? error.message : 'Gemini request failed'
     }
-  } else if (!GEMINI_API_KEY) {
-    geminiFailure = 'GEMINI_API_KEY is not configured in Supabase Edge Function secrets'
+  } else if (!META_API_KEY) {
+    geminiFailure = 'META_API_KEY is not configured in Supabase Edge Function secrets'
   }
 
   if (!summary) {
