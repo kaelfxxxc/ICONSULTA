@@ -66,10 +66,27 @@ Deno.serve(async (req) => {
 
   const { data: existing, error: summaryError } = await admin
     .from('appointment_summaries')
-    .select('transcript')
+    .select('transcript, summary')
     .eq('appointment_id', appointmentId)
     .maybeSingle()
   if (summaryError) return json({ error: summaryError.message }, 500)
+
+  const existingSummary = existing?.summary?.trim() ?? ''
+  const hasCanonicalSummary = Boolean(
+    existingSummary &&
+    !existingSummary.includes('once the AI summary has been generated') &&
+    !existingSummary.includes('could not generate the summary') &&
+    !existingSummary.includes('AI summary generation failed') &&
+    !existingSummary.includes('No transcript was captured'),
+  )
+  if (hasCanonicalSummary) {
+    return json({
+      ok: true,
+      appointment_id: appointmentId,
+      source: 'gemini',
+      canonical: true,
+    })
+  }
 
   const transcript = existing?.transcript?.trim() ?? ''
   let summary: string | null = null

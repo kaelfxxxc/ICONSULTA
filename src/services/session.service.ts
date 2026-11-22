@@ -67,7 +67,27 @@ export async function endSession(appointmentId: string, transcript = '', languag
   }
 
   const cleanedTranscript = transcript.trim()
-  if (cleanedTranscript) {
+  const { data: existingSummary, error: existingSummaryError } = await supabase
+    .from('appointment_summaries')
+    .select('transcript, summary')
+    .eq('appointment_id', appointmentId)
+    .maybeSingle()
+  if (existingSummaryError) throw existingSummaryError
+
+  const existingSummaryText = existingSummary?.summary?.trim() ?? ''
+  const existingTranscript = existingSummary?.transcript?.trim() ?? ''
+  const hasStudentSideSummary = Boolean(
+    existingSummaryText &&
+    !existingSummaryText.includes('once the AI summary has been generated') &&
+    !existingSummaryText.includes('could not generate the summary') &&
+    !existingSummaryText.includes('AI summary generation failed') &&
+    !existingSummaryText.includes('No transcript was captured'),
+  )
+
+  // Keep the first party's captured transcript and completed summary canonical.
+  // If the student side has already generated it, the instructor side must not
+  // overwrite it with a separate browser transcript or another Gemini response.
+  if (!existingTranscript && cleanedTranscript) {
     const { error } = await supabase
       .from('appointment_summaries')
       .update({ transcript: cleanedTranscript })
@@ -75,5 +95,7 @@ export async function endSession(appointmentId: string, transcript = '', languag
     if (error) throw error
   }
 
-  await generateAppointmentSummary(appointmentId, language)
+  if (!hasStudentSideSummary) {
+    await generateAppointmentSummary(appointmentId, language)
+  }
 }

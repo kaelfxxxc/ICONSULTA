@@ -49,6 +49,10 @@ export function useLiveTranscript(roomId?: string, speakerName = 'Participant', 
   const channel = useRef<ReturnType<typeof supabase.channel> | null>(null)
   const translationQueue = useRef(Promise.resolve())
 
+  const updateCombinedTranscript = useCallback(() => {
+    setTranscript([finalText.current, sharedText.current].filter(Boolean).join('\n').trim())
+  }, [])
+
   const translate = useCallback(async (text: string) => {
     if (language === 'en-US') return text
     const { data, error } = await supabase.functions.invoke('translate-transcript', {
@@ -65,12 +69,12 @@ export function useLiveTranscript(roomId?: string, speakerName = 'Participant', 
         if (!payload?.text || payload.speaker === speakerName) return
         const line = `${payload.speaker}: ${payload.text}`
         sharedText.current = `${sharedText.current}\n${line}`.trim()
-        setTranscript((current) => current ? `${current}\n${line}` : line)
+        updateCombinedTranscript()
       })
       .subscribe()
     channel.current = room
     return () => { void supabase.removeChannel(room); channel.current = null }
-  }, [roomId, speakerName])
+  }, [roomId, speakerName, updateCombinedTranscript])
 
   useEffect(() => {
     setSupported(!!getSpeechRecognition())
@@ -120,8 +124,9 @@ export function useLiveTranscript(roomId?: string, speakerName = 'Participant', 
               broadcastFinals.set(i, words)
               translationQueue.current = translationQueue.current.then(async () => {
                 const translated = await translate(words)
-                finalText.current = `${finalText.current} ${translated}`.trim()
-                setTranscript(finalText.current)
+                const labeledLine = `${speakerName}: ${translated}`
+                finalText.current = `${finalText.current}\n${labeledLine}`.trim()
+                updateCombinedTranscript()
                 await channel.current?.send({
                   type: 'broadcast',
                   event: 'caption',
@@ -133,7 +138,7 @@ export function useLiveTranscript(roomId?: string, speakerName = 'Participant', 
           else pending += `${words} `
         }
         interimText.current = pending.trim()
-        setTranscript(finalText.current)
+        updateCombinedTranscript()
         setInterim(interimText.current)
       }
       instance.onerror = (event) => {
@@ -172,7 +177,7 @@ export function useLiveTranscript(roomId?: string, speakerName = 'Participant', 
       }
     }
     begin()
-  }, [speakerName, translate])
+  }, [speakerName, translate, updateCombinedTranscript])
 
   useEffect(() => {
     languageRef.current = language
@@ -194,7 +199,11 @@ export function useLiveTranscript(roomId?: string, speakerName = 'Participant', 
   }, [])
 
   const getTranscript = useCallback(() =>
-    [finalText.current, sharedText.current, interimText.current].filter(Boolean).join('\n').trim(), [])
+    [
+      finalText.current,
+      sharedText.current,
+      interimText.current ? `${speakerName}: ${interimText.current}` : '',
+    ].filter(Boolean).join('\n').trim(), [speakerName])
 
   return { supported, listening, transcript, interim, error, start, stop, getTranscript }
 }

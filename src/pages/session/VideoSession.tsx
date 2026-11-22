@@ -355,8 +355,8 @@ export default function VideoSession() {
             </div>
             {summary?.transcript || liveTranscript.transcript || liveTranscript.interim ? (
               <p className="max-h-48 overflow-y-auto whitespace-pre-line text-sm leading-relaxed text-white/70">
-                {summary?.transcript ?? (liveTranscript.transcript ? `${selfName} (${isInstructor ? 'Instructor' : 'Student'}): ${liveTranscript.transcript}` : '')}
-                {liveTranscript.interim && <span className="text-white/40"> {` ${selfName} (${isInstructor ? 'Instructor' : 'Student'}): ${liveTranscript.interim}`}</span>}
+                {summary?.transcript ?? liveTranscript.transcript}
+                {liveTranscript.interim && <span className="text-white/40">{`\n${selfName}: ${liveTranscript.interim}`}</span>}
               </p>
             ) : (
               <div className="space-y-2">
